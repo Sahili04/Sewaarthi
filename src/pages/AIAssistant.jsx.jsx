@@ -42,7 +42,7 @@ export default function AIAssistant({ medicines }) {
     setLoading(true)
     try {
       const medList = medicines.map(m=>`${m.name} (${m.dosage} at ${m.time})`).join(', ')
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/claude', {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({
