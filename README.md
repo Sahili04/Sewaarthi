@@ -1,4 +1,4 @@
-# 💊 MediMind — Smart Medicine Reminder & AI-Assisted Pill Management
+# 💊 Sewaarthi — Smart Medicine Reminder & AI-Assisted Pill Management
 
 > A React-based healthcare web application designed to help elderly users manage medication schedules efficiently with AI assistance and IoT integration simulation.
 
