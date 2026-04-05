@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { auth, googleProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from '../firebase'
-import { translations } from '../locales/translations'
 
 function AppLogo({ size = 68 }) {
   return (
@@ -25,9 +24,6 @@ export default function Login({ lang = 'en', onChangeLang }) {
   const [error,     setError]     = useState('')
   const [loading,   setLoading]   = useState(false)
 
-  const tr = translations[lang] || translations['en']
-  const t = (key, fallback) => tr[key] || fallback || key
-
   const errMsg = code => ({
     'auth/email-already-in-use': 'Email already registered — please log in.',
     'auth/wrong-password':        'Wrong password. Try again.',
@@ -39,18 +35,12 @@ export default function Login({ lang = 'en', onChangeLang }) {
     'auth/popup-blocked':         'Popup blocked. Please allow popups for this site.',
   }[code] || 'Something went wrong. Please try again.')
 
-  const saveRoleToDB = async (uid, emailAddr, displayName) => {
+  const saveRoleToDB = async (uid, email, displayName) => {
     try {
       const { getFirestore, doc, setDoc } = await import('firebase/firestore')
       const { getApp } = await import('firebase/app')
       const fdb = getFirestore(getApp())
-      // Always store email so caretaker can find patients by email
-      await setDoc(doc(fdb, 'users', uid), {
-        role,
-        email: emailAddr.toLowerCase(),
-        displayName: displayName || emailAddr.split('@')[0],
-        profileComplete: role === 'caretaker' ? true : false,
-      }, { merge: true })
+      await setDoc(doc(fdb, 'users', uid), { role, email, displayName: displayName || email.split('@')[0], profileComplete: false }, { merge: true })
     } catch(e) { console.error(e) }
   }
 
@@ -99,7 +89,7 @@ export default function Login({ lang = 'en', onChangeLang }) {
         animation: 'orbFloat 14s ease-in-out infinite alternate', pointerEvents: 'none',
       }} />
 
-      {/* Language selector */}
+      {/* Language selector top-right */}
       <div style={{ position:'fixed', top:16, right:20, zIndex:10 }}>
         <select value={lang} onChange={e => onChangeLang?.(e.target.value)}
           style={{ background:'rgba(255,255,255,0.85)', border:'1.5px solid rgba(26,111,255,0.2)', color:'#1a6fff', padding:'6px 10px', borderRadius:10, cursor:'pointer', fontSize:12, fontWeight:700, fontFamily:"'Plus Jakarta Sans',sans-serif", outline:'none' }}>
@@ -114,19 +104,23 @@ export default function Login({ lang = 'en', onChangeLang }) {
         boxShadow: '0 20px 60px rgba(26,111,255,0.18), 0 0 0 1px rgba(255,255,255,0.5)',
         position: 'relative', zIndex: 1, animation: 'pageIn 0.5s cubic-bezier(0.22,1,0.36,1) both',
       }}>
+        {/* Top accent line */}
         <div style={{ position:'absolute', top:0, left:'12%', right:'12%', height:2,
           background:'linear-gradient(90deg, transparent, #1a6fff, #60a5fa, transparent)', borderRadius:2 }} />
 
         {/* Logo */}
         <div style={{ textAlign:'center', marginBottom:28 }}>
-          <AppLogo size={160} />
-          <div style={{ fontSize:12, color:'#8ba0c0', marginTop:4 }}>{t('tagline','Your Smart Medicine Companion')}</div>
+          <AppLogo size={80} />
+          <div style={{ fontFamily:'Outfit,sans-serif', fontSize:24, fontWeight:800, color:'#0d1b3e', marginTop:10 }}>
+            Sewa<span style={{color:'#1a6fff'}}>arthii</span>
+          </div>
+          <div style={{ fontSize:12, color:'#8ba0c0', marginTop:4 }}>Your Smart Medicine Companion</div>
         </div>
 
         {/* Role selector */}
         <div style={{ marginBottom:18 }}>
           <div style={{ fontSize:12, fontWeight:600, color:'#3a5080', marginBottom:8 }}>
-            {isSignup ? t('signupAs','Sign up as') : t('loginAs','Login as')}:
+            {isSignup ? 'Sign up as' : 'Login as'}:
           </div>
           <div style={{ display:'flex', gap:10 }}>
             {['patient','caretaker'].map(r => (
@@ -137,7 +131,7 @@ export default function Login({ lang = 'en', onChangeLang }) {
                   color: role===r ? '#1a6fff' : '#8ba0c0', fontWeight:700, fontSize:13,
                   cursor:'pointer', fontFamily:"'Plus Jakarta Sans',sans-serif", transition:'all 0.2s',
                 }}>
-                {r === 'patient' ? `🧑‍⚕️ ${t('patient','Patient')}` : `👨‍👩‍👧 ${t('caretaker','Caretaker')}`}
+                {r === 'patient' ? '🧑‍⚕️ Patient' : '👨‍👩‍👧 Caretaker'}
               </button>
             ))}
           </div>
@@ -145,7 +139,7 @@ export default function Login({ lang = 'en', onChangeLang }) {
 
         {/* Tabs */}
         <div style={{ display:'flex', background:'rgba(26,111,255,0.06)', borderRadius:14, padding:4, marginBottom:22, border:'1px solid rgba(26,111,255,0.12)' }}>
-          {[t('login','Login'), t('signup','Sign Up')].map((tab,i) => (
+          {['Login','Sign Up'].map((tab,i) => (
             <button key={tab} onClick={() => { setIsSignup(i===1); setError('') }}
               style={{
                 flex:1, padding:'11px 0', border:'none', cursor:'pointer',
@@ -159,7 +153,7 @@ export default function Login({ lang = 'en', onChangeLang }) {
 
         {/* Email */}
         <div style={{ marginBottom:14 }}>
-          <label style={{ fontSize:12, fontWeight:600, color:'#3a5080', display:'block', marginBottom:6 }}>📧 {t('email','Email Address')}</label>
+          <label style={{ fontSize:12, fontWeight:600, color:'#3a5080', display:'block', marginBottom:6 }}>📧 Email Address</label>
           <input
             style={{ width:'100%', padding:'14px 16px', borderRadius:13, border:'1.5px solid rgba(26,111,255,0.18)', fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, color:'#0d1b3e', background:'rgba(255,255,255,0.82)', outline:'none', boxSizing:'border-box', transition:'border-color 0.2s,box-shadow 0.2s' }}
             placeholder="you@example.com" type="email" value={email}
@@ -171,7 +165,7 @@ export default function Login({ lang = 'en', onChangeLang }) {
         </div>
 
         <div style={{ marginBottom:20 }}>
-          <label style={{ fontSize:12, fontWeight:600, color:'#3a5080', display:'block', marginBottom:6 }}>🔒 {t('password','Password')}</label>
+          <label style={{ fontSize:12, fontWeight:600, color:'#3a5080', display:'block', marginBottom:6 }}>🔒 Password</label>
           <input
             style={{ width:'100%', padding:'14px 16px', borderRadius:13, border:'1.5px solid rgba(26,111,255,0.18)', fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:14, color:'#0d1b3e', background:'rgba(255,255,255,0.82)', outline:'none', boxSizing:'border-box', transition:'border-color 0.2s,box-shadow 0.2s' }}
             placeholder="Minimum 6 characters" type="password" value={password}
@@ -195,7 +189,7 @@ export default function Login({ lang = 'en', onChangeLang }) {
             cursor: loading ? 'not-allowed' : 'pointer',
             boxShadow:'0 6px 20px rgba(26,111,255,0.35)', marginBottom:14, transition:'all 0.22s',
           }}>
-          {loading ? '⏳ Please wait...' : isSignup ? `🚀 ${t('signup','Sign Up')}` : `🔐 ${t('login','Login')}`}
+          {loading ? '⏳ Please wait...' : isSignup ? '🚀 Create Account' : '🔐 Login'}
         </button>
 
         <div style={{ display:'flex', alignItems:'center', gap:10, margin:'4px 0 14px' }}>
@@ -219,7 +213,7 @@ export default function Login({ lang = 'en', onChangeLang }) {
           {isSignup ? 'Already have an account? ' : "Don't have an account? "}
           <button onClick={() => { setIsSignup(!isSignup); setError('') }}
             style={{ background:'none', border:'none', color:'#1a6fff', fontWeight:700, cursor:'pointer', fontSize:12, fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
-            {isSignup ? t('login','Login') : t('signup','Sign Up')}
+            {isSignup ? 'Login' : 'Sign Up'}
           </button>
         </div>
       </div>

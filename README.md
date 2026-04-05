@@ -1,57 +1,80 @@
-# 💊 Sewaarthi — Smart Medicine Reminder & AI-Assisted Pill Management
+# 🌿 Sewarthii — Smart Health Companion
 
-> A React-based healthcare web application designed to help elderly users manage medication schedules efficiently with AI assistance and IoT integration simulation.
+<p align="center">
+  <img src="public/logo.png" alt="Sewarthii Logo" width="200"/>
+</p>
 
-This project combines **AI**, **web development**, and **IoT concepts** to create a smart medication management system.
+<p align="center">
+  <strong>Your all-in-one personal health management app — built for patients & caretakers.</strong><br/>
+  Medicine reminders · Water tracking · Habit streaks · AI chat · Doctor contacts · Caretaker linking
+</p>
+
+<p align="center">
+  <a href="https://github.com/Sahili04/Sewaarthi"><img src="https://img.shields.io/badge/GitHub-Sewaarthi-blue?logo=github" /></a>
+  <img src="https://img.shields.io/badge/Built%20with-React%20+%20Firebase-orange?logo=react" />
+  <img src="https://img.shields.io/badge/Powered%20by-Vite-purple?logo=vite" />
+  <img src="https://img.shields.io/badge/Languages-EN%20%7C%20हिं%20%7C%20मरा-green" />
+</p>
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-### 🧭 Dashboard
-- View all medicines
-- Mark medicines as **Taken / Missed**
-- Track adherence statistics
+### 💊 Medicine Management
+- Add medicines with dosage, food timing, and multiple daily reminder times
+- Mark medicines as **Taken / Missed / Pending**
+- Smart **push notification reminders** even across browser tabs
+- 🔊 Voice reminders in **English, Hindi & Marathi**
+- 10-minute snooze support
 
-### ➕ Add Medicine
-Add new medicines with:
-- Medicine name
-- Dosage
-- Time schedule
-- Before/after food timing
-- Duration
+### 💧 Water Tracker
+- Track daily water intake with quick-add buttons (150ml / 250ml / 350ml / 500ml)
+- Visual ring progress toward your daily goal
+- Set custom **water reminder times**
+- Syncs with health heatmap
 
-### ⏰ Smart Reminder System
-- Automatically checks reminders every **30 seconds**
-- Sends **browser notifications**
-- Alerts users for upcoming medication
+### 🏃 Habit Tracker
+- Log daily activities from presets (Walking, Yoga, Workout, Cycling…)
+- Built-in activity timer with start/stop
+- Streak visualization in the dashboard heatmap
 
-### ⚠️ Missed Dose Detection
-- Automatically marks medicine as **missed**
-- Triggered if dose not taken within **15 minutes**
+### 📅 Health Streak Heatmap
+- GitHub-style **365-day activity heatmap** on the dashboard
+- Tracks medicine adherence, water intake & activity scores per day
+- Hover tooltips with daily breakdown
 
-### 🔐 Authentication
-- Email/Password login and signup
-- Google Sign In
-- Powered by **Firebase Auth**
-- Each user's data is private and secure
-
-### 🤖 AI Chat Assistant
-- Ask medicine-related questions
-- Powered by **Claude AI**
-- Includes fallback response system
+### 🤖 AI Health Assistant
+- Ask health questions, get medicine information
+- Powered by integrated AI chat
 
 ### 📷 Prescription Scanner
-- Upload prescription image
-- Simulated OCR extraction
-- Helps auto-fill medicine data
+- Scan prescriptions and auto-add medicines via AI OCR
 
-### 🔌 IoT Pill Dispenser Simulation
-Simulated hardware system using:
-- ESP32
-- MQTT protocol
-- Servo motor dispenser
-- Smart alert system
+### 🏥 Doctor Contacts
+- Save doctor details: name, specialty, phone, hospital, available hours
+- One-tap call from the app
+- Emergency contact quick access on dashboard
+
+### 👨‍⚕️ Caretaker System
+- **Caretakers** register separately and send requests to patients via email
+- **Patients** accept/reject incoming requests
+- Accepted caretakers get access to their patient's:
+  - Full medicine list & adherence stats
+  - Today's water intake & habit summary
+  - Missed dose alerts
+- Caretakers have their own dedicated dashboard (no patient UI clutter)
+
+### 📄 PDF Health Reports
+- Generate downloadable PDF reports for any date range
+- Includes medicine adherence rate, water stats, activity summary
+- Styled with Sewarthii branding
+
+### 🌐 Multi-Language Support
+| Language | Code |
+|----------|------|
+| English | `en` |
+| Hindi | `hi` |
+| Marathi | `mr` |
 
 ---
 
@@ -59,119 +82,128 @@ Simulated hardware system using:
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 18 + Vite |
-| Styling | Pure CSS |
-| Database | Firebase Firestore |
-| Auth | Firebase Authentication |
-| AI | Claude API |
-| Deployment | Vercel |
+| Frontend Framework | React 18 + Vite |
+| Styling | Vanilla CSS (custom design system) |
+| Backend / Auth | Firebase (Firestore + Auth) |
+| Auth Providers | Email/Password + Google Sign-In |
+| Voice | Web Speech Synthesis API |
+| Notifications | Web Notifications API |
+| PDF Generation | jsPDF |
+| Fonts | Google Fonts — Outfit, Plus Jakarta Sans |
 
 ---
 
-## 📦 Run Project Locally
+## 🚀 Getting Started
 
-Clone the repository:
-```bash
-git clone https://github.com/Sahili04/Anant-medicare.git
-```
+### Prerequisites
+- Node.js ≥ 18
+- A Firebase project with Firestore & Authentication enabled
 
-Install dependencies:
+### Installation
+
 ```bash
+# Clone the repository
+git clone https://github.com/Sahili04/Sewaarthi.git
+cd Sewaarthi
+
+# Install dependencies
 npm install
-```
 
-Start development server:
-```bash
+# Start development server
 npm run dev
 ```
 
-Open:
-```
-http://localhost:5173
-```
+App will be available at **http://localhost:5173**
 
----
+### Firebase Setup
 
-## 🔧 Firebase Setup
+1. Create a project at [Firebase Console](https://console.firebase.google.com)
+2. Enable **Authentication** → Email/Password & Google
+3. Enable **Firestore Database**
+4. Replace the config in `src/firebase.js`:
 
-Create a project at **firebase.google.com** and update `src/firebase.js`:
 ```js
 const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.firebasestorage.app",
-  messagingSenderId: "your-sender-id",
-  appId: "your-app-id"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 }
 ```
-
-Enable in Firebase Console:
-- ✅ Firestore Database — test mode
-- ✅ Authentication — Email/Password
-- ✅ Authentication — Google
-
----
-
-## 🌐 Deploy to Vercel
-
-Install CLI:
-```bash
-npm install -g vercel
-```
-
-Deploy:
-```bash
-vercel
-```
-
----
-
-## 🔮 Future IoT Integration
-
-The application can connect to a smart pill dispenser hardware system built using:
-
-### Hardware Components
-| Component | Purpose |
-|-----------|---------|
-| ESP32 | WiFi-enabled microcontroller |
-| DS3231 RTC | Real-time clock module |
-| MG996R Servo | Pill dispensing motor |
-| LCD 16x2 | Local status display |
-| Buzzer | Audio medication alert |
-
-### Communication Protocol
-- **MQTT** over WiFi
-- Broker: `medimind.local:1883`
-- Web app sends dispense command → ESP32 executes → sends confirmation back
 
 ---
 
 ## 📁 Project Structure
+
 ```
 src/
-  components/
-    ReminderSystem.jsx
-  pages/
-    Dashboard.jsx
-    AddMedicine.jsx
-    AIAssistant.jsx
-    PrescriptionScanner.jsx
-    IoTDevice.jsx
-    Login.jsx
-  firebase.js
-  App.jsx
-  main.jsx
-  index.css
+├── firebase.js              # Firebase config & exports
+├── App.jsx                  # Root component, routing, reminders
+├── index.css                # Global design system & utilities
+├── locales/
+│   └── translations.js      # EN / HI / MR translation strings
+└── pages/
+    ├── Login.jsx             # Auth (login, signup, Google, role select)
+    ├── ProfileSetup.jsx      # Patient onboarding & health profile
+    ├── Dashboard.jsx         # Home — stats, heatmap, medicine list
+    ├── AddMedicine.jsx       # Add new medicine with reminders
+    ├── AIAssistant.jsx       # AI health chat
+    ├── PrescriptionScanner.jsx # OCR prescription scanner
+    ├── DoctorContacts.jsx    # Doctor & emergency contact manager
+    ├── WaterTracker.jsx      # Water intake tracking
+    ├── Habittracker.jsx      # Daily activity tracker with timer
+    ├── CaretakerDashboard.jsx # Caretaker & patient care network
+    ├── Reports.jsx           # PDF report generator
+    ├── IoTDevice.jsx         # IoT device integration
+    └── SeedData.jsx          # 🌱 Dev tool — seeds 6 months of demo data
 ```
 
 ---
 
-## 🎯 Project Goal
+## 🌱 Demo Data Seeder
 
-To create an AI-assisted medication management platform that helps users — especially **elderly patients** — maintain proper medication adherence and reduce missed doses.
+For demo/testing purposes, visit:
 
+```
+http://localhost:5173/?seed=1
+```
+
+This will populate **6 months of realistic health data** including:
+- 10 medicines (chronic, supplements, acute)
+- 4 doctor contacts
+- 180 days of water intake with natural streaks
+- Daily habit logs
+- Pre-linked caretaker (Ananya Raut)
+
+---
+
+## 🔐 User Roles
+
+| Role | Capabilities |
+|------|-------------|
+| **Patient** | Full app access — medicines, water, habits, reports, AI, scanner |
+| **Caretaker** | Send requests to patients · View patient dashboard once accepted |
+
+---
+
+## 📸 Screenshots
+
+> Login page, dashboard, caretaker view, water tracker, and heatmap available in the app.
+
+---
+
+## 🤝 Contributing
+
+Pull requests are welcome! For major changes, please open an issue first.
+
+---
 
 ## 📄 License
 
-MIT License — Free to use and modify.
+This project is built for educational and personal health management purposes.
+
+---
+
+<p align="center">Made with ❤️ by <strong>Sahili</strong> — Sewarthii 2025</p>

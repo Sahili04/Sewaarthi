@@ -9,10 +9,9 @@ import CaretakerDashboard from './pages/CaretakerDashboard'
 import DoctorContacts from './pages/DoctorContacts'
 import Login from './pages/Login'
 import ProfileSetup from './pages/ProfileSetup'
-import WaterTracker from './pages/Watertracker'
-import HabitTracker from './pages/Habittracker'
+import WaterTracker from './pages/WaterTracker'
+import HabitTracker from './pages/HabitTracker'
 import Reports from './pages/Reports'
-import SeedData from './pages/SeedData'
 import { translations, voiceLang } from './locales/translations'
 import './index.css'
 
@@ -23,16 +22,6 @@ function t(key, lang) {
   const val = translations[lang]?.[key] ?? translations['en']?.[key] ?? key
   return val
 }
-
-// ── Pre-init AudioContext on user interaction ──
-let _audioCtx = null
-function getAudioCtx() {
-  if (!_audioCtx) {
-    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)() } catch(e) {}
-  }
-  return _audioCtx
-}
-document.addEventListener('click', () => getAudioCtx(), { once: true })
 
 // ── Voice reminder ──
 function speakReminder(text, lang) {
@@ -48,9 +37,7 @@ function speakReminder(text, lang) {
 // ── Beep sound ──
 function playBeep() {
   try {
-    const ctx = getAudioCtx()
-    if (!ctx) return
-    if (ctx.state === 'suspended') ctx.resume()
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
     const beep = (freq, tm, dur) => {
       const o = ctx.createOscillator(); const g = ctx.createGain()
       o.connect(g); g.connect(ctx.destination)
@@ -61,19 +48,6 @@ function playBeep() {
     }
     beep(880, 0, 0.14); beep(1100, 0.18, 0.14); beep(880, 0.36, 0.2)
   } catch(e) {}
-}
-
-// ── Browser Notification ──
-function requestNotifPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission()
-  }
-}
-function showBrowserNotif(title, body) {
-  if ('Notification' in window && Notification.permission === 'granted') {
-    const n = new Notification(title, { body, icon: '/logo.png', badge: '/logo.png', requireInteraction: true })
-    n.onclick = () => { window.focus(); n.close() }
-  }
 }
 
 // ── Language Selector ──
@@ -88,7 +62,7 @@ function LanguageSelector({ lang, onChange }) {
   )
 }
 
-// ── Logo ──
+// ── Logo with image ──
 function AppLogo({ size = 36 }) {
   return (
     <img src="/logo.png" alt="Sewarthii"
@@ -120,7 +94,6 @@ export default function App() {
   const [lang,        setLangState]   = useState(getLang())
   const [userProfile, setUserProfile] = useState(null)
   const [needsProfile,setNeedsProfile]= useState(false)
-  const [userRole,    setUserRole]    = useState('patient')
   const checkedRef = useRef({})
   const snoozeRef  = useRef({})
   const waterSnoozeRef = useRef({})
@@ -128,28 +101,19 @@ export default function App() {
   const changeLang = (l) => { setLang(l); setLangState(l) }
   const tr = (key) => t(key, lang)
 
-  // Request notification permission
-  useEffect(() => { requestNotifPermission() }, [])
-
   // ── Auth ──
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
       setUser(u)
       if (u) {
+        // load profile from firestore
         try {
           const { getDoc, doc: fDoc } = await import('firebase/firestore')
           const snap = await getDoc(fDoc(db, 'users', u.uid))
           if (snap.exists()) {
             const data = snap.data()
             setUserProfile(data)
-            const role = data.role || 'patient'
-            setUserRole(role)
-            // Caretakers skip profile setup
-            if (role === 'caretaker') {
-              setNeedsProfile(false)
-            } else {
-              setNeedsProfile(!data.profileComplete)
-            }
+            setNeedsProfile(!data.profileComplete)
           } else {
             setNeedsProfile(true)
           }
@@ -183,12 +147,9 @@ export default function App() {
           if (checkedRef.current[key]) return
           checkedRef.current[key] = true
           playBeep()
-          const msgFn = translations[lang]?.medicineTime || translations['en'].medicineTime
-          const msg = typeof msgFn === 'function' ? msgFn(med.name) : `Time to take ${med.name}`
+          const msg = typeof tr('medicineTime') === 'function' ? tr('medicineTime')(med.name) : `Time to take ${med.name}`
           speakReminder(msg, lang)
           setReminderMed({ ...med, dueTime: tm })
-          // Browser notification for background tabs
-          showBrowserNotif(tr('medicineTimeTitle') || 'Medicine Time!', msg)
         })
       })
     }
@@ -210,10 +171,8 @@ export default function App() {
         if (checkedRef.current[key]) return
         checkedRef.current[key] = true
         playBeep()
-        const waterMsg = translations[lang]?.waterTime || translations['en'].waterTime
-        speakReminder(waterMsg, lang)
+        speakReminder(tr('waterTime'), lang)
         setWaterAlert({ amount: rem.amount || 250, idx })
-        showBrowserNotif(tr('waterTimeTitle') || 'Water Time!', waterMsg)
       })
     }
     check()
@@ -245,6 +204,7 @@ export default function App() {
     if (reminderMed) {
       snoozeRef.current[reminderMed.id + '_' + reminderMed.dueTime] = Date.now() + 10*60*1000
       setReminderMed(null)
+      // recheck after snooze
       setTimeout(() => { delete checkedRef.current[reminderMed.id + '_' + reminderMed.dueTime] }, 10*60*1000 + 5000)
     }
   }
@@ -258,15 +218,13 @@ export default function App() {
 
   const handleLogout = async () => { await signOut(auth); setPage('dashboard'); checkedRef.current = {} }
 
-  // Hidden seed route — accessible at /?seed=1
-  if (new URLSearchParams(window.location.search).get('seed') === '1' && user) {
-    return <SeedData user={user} db={db} />
-  }
-
   if (authLoading) return (
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#cce5ff,#daeeff)' }}>
-      <AppLogo size={100} />
-      <div style={{ fontSize:12, color:'#8ba0c0', marginTop:8 }}>{tr('tagline') || 'Loading your health data...'}</div>
+      <AppLogo size={80} />
+      <div style={{ fontFamily:'Outfit,sans-serif', fontSize:24, fontWeight:800, color:'#0d1b3e', marginTop:12 }}>
+        Sewa<span style={{color:'#1a6fff'}}>arthii</span>
+      </div>
+      <div style={{ fontSize:12, color:'#8ba0c0', marginTop:8 }}>Loading your health data...</div>
     </div>
   )
 
@@ -274,7 +232,7 @@ export default function App() {
 
   if (needsProfile) return (
     <ProfileSetup
-      user={user} db={db} lang={lang} tr={tr}
+      user={user} db={db} lang={lang}
       onComplete={(profile) => { setUserProfile(profile); setNeedsProfile(false) }}
     />
   )
@@ -284,20 +242,6 @@ export default function App() {
 
   const sharedProps = { lang, tr }
 
-  // ── CARETAKER: dedicated full-page experience, no patient nav ──
-  if (userRole === 'caretaker') {
-    return (
-      <CaretakerDashboard
-        user={user} db={db} tr={tr} lang={lang}
-        currentUserName={displayName}
-        isFullPage={true}
-        initials={initials}
-        changeLang={changeLang}
-        onLogout={handleLogout}
-      />
-    )
-  }
-
   return (
     <div className="app-layout">
 
@@ -306,8 +250,8 @@ export default function App() {
         <div className="reminder-overlay">
           <div className="reminder-popup">
             <span className="reminder-pill-icon">💊</span>
-            <h3>{tr('medicineTimeTitle')}</h3>
-            <p>{tr('dontSkip')}</p>
+            <h3>Medicine Time!</h3>
+            <p>Don't skip your scheduled dose</p>
             <div className="med-highlight">
               <h4>{reminderMed.name}</h4>
               <p>{reminderMed.dosage} · {reminderMed.foodTiming} food · ⏰ {reminderMed.dueTime}</p>
@@ -317,12 +261,11 @@ export default function App() {
               <button className="btn-snooze" onClick={handleSnooze}>⏰ {tr('snooze')} 10m</button>
             </div>
             <button onClick={() => {
-              const msgFn = translations[lang]?.medicineTime || translations['en'].medicineTime
-              const msg = typeof msgFn === 'function' ? msgFn(reminderMed.name) : `Time to take ${reminderMed.name}`
+              const msg = typeof tr('medicineTime') === 'function' ? tr('medicineTime')(reminderMed.name) : `Time to take ${reminderMed.name}`
               speakReminder(msg, lang)
             }}
               style={{ marginTop:12, background:'none', border:'1px solid rgba(26,111,255,0.2)', color:'var(--blue)', borderRadius:10, padding:'7px 16px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'var(--ff)', width:'100%' }}>
-              🔊 {tr('speakAgain')}
+              🔊 Speak Again
             </button>
           </div>
         </div>
@@ -333,11 +276,11 @@ export default function App() {
         <div className="reminder-overlay">
           <div className="reminder-popup">
             <span className="reminder-pill-icon">💧</span>
-            <h3>{tr('waterTimeTitle')}</h3>
-            <p>{tr('stayHydrated')}</p>
+            <h3>Water Time!</h3>
+            <p>Stay hydrated — it's time to drink water</p>
             <div className="med-highlight">
               <h4>💧 {waterAlert.amount}ml</h4>
-              <p>{tr('drinkGlass')}</p>
+              <p>Drink a glass of water now</p>
             </div>
             <div className="reminder-actions">
               <button className="btn-take" onClick={handleWaterDrink}>✅ {tr('drinkNow')}</button>
@@ -375,7 +318,7 @@ export default function App() {
           <LanguageSelector lang={lang} onChange={changeLang} />
         </div>
         <nav className="nav-section">
-          <div className="nav-label">{tr('mainMenu')}</div>
+          <div className="nav-label">Main Menu</div>
           {NAV.map(item => (
             <button key={item.id} className={'nav-item' + (page===item.id&&!isCaretaker?' active':'')}
               onClick={() => { setIsCaretaker(false); navigate(item.id) }}>
@@ -391,9 +334,9 @@ export default function App() {
           <button className={'nav-item' + (page==='profile'&&!isCaretaker?' active':'')}
             onClick={() => { setIsCaretaker(false); navigate('profile') }}>
             <span className="nav-icon">👤</span>
-            <span className="nav-label">{tr('healthBmi')}</span>
+            <span className="nav-label">{tr('profile')}</span>
           </button>
-          <div className="nav-label" style={{ marginTop:14 }}>{tr('caretaker')}</div>
+          <div className="nav-label" style={{ marginTop:14 }}>Caretaker</div>
           <button className={'nav-item' + (isCaretaker?' active':'')}
             onClick={() => setIsCaretaker(true)}>
             <span className="nav-icon">👨‍⚕️</span>
@@ -425,7 +368,7 @@ export default function App() {
               {page==='water'     && <WaterTracker user={user} db={db} userProfile={userProfile} lang={lang} speakReminder={speakReminder} {...sharedProps} />}
               {page==='habits'    && <HabitTracker user={user} db={db} {...sharedProps} />}
               {page==='reports'   && <Reports user={user} db={db} medicines={medicines} userProfile={userProfile} {...sharedProps} />}
-              {page==='profile'   && <ProfileSetup user={user} db={db} lang={lang} tr={tr} inline onComplete={(p) => setUserProfile(p)} />}
+              {page==='profile'   && <ProfileSetup user={user} db={db} lang={lang} inline onComplete={(p) => setUserProfile(p)} />}
             </>
           )}
         </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore'
 
 // GitHub-style health heatmap
-function HealthHeatmap({ user, db, tr }) {
+function HealthHeatmap({ user, db }) {
   const [data, setData] = useState({})
   const [tooltip, setTooltip] = useState(null)
 
@@ -35,11 +35,9 @@ function HealthHeatmap({ user, db, tr }) {
   const intensity = (score) => !score ? 0 : score < 30 ? 1 : score < 60 ? 2 : score < 85 ? 3 : 4
   const colors = ['rgba(26,111,255,0.08)','rgba(26,111,255,0.2)','rgba(26,111,255,0.4)','rgba(26,111,255,0.65)','#1a6fff']
 
-  const t = (key, fallback) => tr ? tr(key) : fallback
-
   return (
     <div className="card" style={{ animation:'fadeUp 0.5s 0.3s both' }}>
-      <div className="section-title" style={{ marginBottom:14 }}>📅 {t('healthHeatmap','Health Streak Heatmap')}</div>
+      <div className="section-title" style={{ marginBottom:14 }}>📅 Health Streak Heatmap</div>
       <div style={{ overflowX:'auto', position:'relative' }}>
         <div style={{ display:'flex', gap:3 }}>
           {weeks.map((wk, wi) => (
@@ -61,9 +59,9 @@ function HealthHeatmap({ user, db, tr }) {
           ))}
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:10, fontSize:10, color:'var(--text3)' }}>
-          <span>{t('less','Less')}</span>
+          <span>Less</span>
           {colors.map((c,i) => <div key={i} style={{ width:12, height:12, borderRadius:3, background:c }} />)}
-          <span>{t('more','More')}</span>
+          <span>More</span>
         </div>
       </div>
       {tooltip && (
@@ -84,8 +82,6 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
   const [waterToday, setWaterToday] = useState(0)
   const today = new Date().toISOString().split('T')[0]
 
-  const t = (key, fallback) => tr ? tr(key) : fallback
-
   const taken   = medicines.filter(m => m.status === 'taken').length
   const missed  = medicines.filter(m => m.status === 'missed').length
   const pending = medicines.filter(m => m.status === 'pending').length
@@ -96,7 +92,7 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
   const filtered      = filter === 'all' ? medicines : medicines.filter(m => m.status === filter)
 
   const hour  = new Date().getHours()
-  const greet = hour < 12 ? t('goodMorning','Good Morning') : hour < 17 ? t('goodAfternoon','Good Afternoon') : t('goodEvening','Good Evening')
+  const greet = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening'
   const name  = user?.displayName || user?.email?.split('@')[0] || 'User'
   const waterGoal = parseFloat(userProfile?.waterGoalLiters || 2.5) * 1000
 
@@ -123,7 +119,7 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
 
       <div className="greeting s1">
         <h2>{greet}, {name} 👋</h2>
-        <p>{new Date().toLocaleDateString(lang === 'en' ? 'en-IN' : lang === 'hi' ? 'hi-IN' : 'mr-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</p>
+        <p>{new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</p>
       </div>
 
       {/* HERO */}
@@ -131,11 +127,11 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
         <div className="hero-glow" />
         <div className="hero-illustration">🩺</div>
         <div className="hero-content">
-          <div className="hero-tag">⚡ {t('todayOverview',"Today's Overview")}</div>
-          <h3>{t('stayOnTrack','Stay on track,')}<br />{t('feelGreat','feel great 💪')}</h3>
-          <p>{t('medicineSchedule','Your medicine schedule')}</p>
+          <div className="hero-tag">⚡ Today's Overview</div>
+          <h3>Stay on track,<br />feel great 💪</h3>
+          <p>Your medicine schedule</p>
           <div className="hero-pills">
-            {[{v:total,l:t('totalMeds','Total')},{v:taken,l:t('takenMeds','Taken')},{v:pending,l:t('leftMeds','Left')}].map(p => (
+            {[{v:total,l:'Total'},{v:taken,l:'Taken'},{v:pending,l:'Left'}].map(p => (
               <div className="hero-pill" key={p.l}>
                 <span className="pv">{p.v}</span>
                 <span className="pl">{p.l}</span>
@@ -148,19 +144,19 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
       {/* QUICK ACTIONS */}
       <div className="quick-grid s3">
         {[
-          { icon:'➕', titleKey:'addMedicine', subKey:'newSchedule',  page:'add' },
-          { icon:'🤖', titleKey:'aiChat',      subKey:'askAnything',  page:'ai' },
-          { icon:'📷', titleKey:'scanRx',      subKey:'aiScanner',    page:'scanner' },
-          { icon:'💧', titleKey:'water',       subKey:'trackIntake',  page:'water' },
-          { icon:'🏃', titleKey:'habitNav',    subKey:'activities',   page:'habits' },
-          { icon:'📄', titleKey:'reports',     subKey:'pdfReport',    page:'reports' },
-          { icon:'🔌', titleKey:'iotDevice',   subKey:'iotSub',       page:'iot' },
-          { icon:'👨‍⚕️', titleKey:'care',      subKey:'manageCare',  page:'caretaker' },
+          { icon:'➕', title:'Add Medicine', sub:'New schedule',  page:'add' },
+          { icon:'🤖', title:'AI Chat',      sub:'Ask anything',  page:'ai' },
+          { icon:'📷', title:'Scan Rx',      sub:'AI scanner',    page:'scanner' },
+          { icon:'💧', title:'Water',        sub:'Track intake',  page:'water' },
+          { icon:'🏃', title:'Habits',       sub:'Activities',    page:'habits' },
+          { icon:'📄', title:'Reports',      sub:'PDF report',    page:'reports' },
+          { icon:'🔌', title:'Dispenser',    sub:'IoT device',    page:'iot' },
+          { icon:'👨‍⚕️', title:'Caretaker',   sub:'Manage care',  page:'caretaker' },
         ].map(q => (
           <button key={q.page} className="quick-card" onClick={() => onNavigate(q.page)}>
             <span className="qc-icon">{q.icon}</span>
-            <div className="qc-title">{t(q.titleKey, q.titleKey)}</div>
-            <div className="qc-sub">{t(q.subKey, q.subKey)}</div>
+            <div className="qc-title">{q.title}</div>
+            <div className="qc-sub">{q.sub}</div>
           </button>
         ))}
       </div>
@@ -168,10 +164,10 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
       {/* STATS */}
       <div className="stats-grid s4">
         {[
-          { icon:'💊', label:t('totalToday','Total Today'), value:total,    cls:'si1' },
-          { icon:'✅', label:t('takenMeds','Taken'),         value:taken,    cls:'si2' },
-          { icon:'⏳', label:t('pending','Pending'),         value:pending,  cls:'si4' },
-          { icon:'💧', label:t('waterMl','Water (ml)'),     value:waterToday, cls:'si2' },
+          { icon:'💊', label:'Total Today', value:total,   cls:'si1' },
+          { icon:'✅', label:'Taken',        value:taken,   cls:'si2' },
+          { icon:'⏳', label:'Pending',      value:pending, cls:'si4' },
+          { icon:'💧', label:'Water (ml)',   value:waterToday, cls:'si2' },
         ].map(s => (
           <div className="stat-card" key={s.label}>
             <div className={'stat-icon ' + s.cls}>{s.icon}</div>
@@ -186,9 +182,9 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
       {/* WATER PROGRESS */}
       <div className="card" style={{ animation:'fadeUp 0.4s 0.1s both' }}>
         <div className="section-header">
-          <div className="section-title">💧 {t('waterIntakeToday','Water Intake Today')}</div>
+          <div className="section-title">💧 Water Intake Today</div>
           <button className="btn btn-outline" style={{ fontSize:11, padding:'5px 10px' }} onClick={() => onNavigate('water')}>
-            + {t('addWater','Add')}
+            + Add
           </button>
         </div>
         <div style={{ fontSize:12, color:'var(--text3)', marginBottom:8 }}>
@@ -203,7 +199,7 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
       {/* ADHERENCE RING */}
       <div className="card s5">
         <div className="section-header">
-          <div className="section-title">📊 {t('adherenceRate','Adherence Rate')}</div>
+          <div className="section-title">📊 Adherence Rate</div>
           <span style={{ fontSize:13, fontWeight:700, color:'var(--blue)' }}>{adherence}%</span>
         </div>
         <div className="ring-wrap">
@@ -227,9 +223,9 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
           </div>
           <div className="adh-list">
             {[
-              { label:t('takenMeds','Taken'),   value:taken,   color:'var(--success)' },
-              { label:t('pending','Pending'), value:pending, color:'var(--warning)' },
-              { label:t('missedFilter','Missed'),  value:missed,  color:'var(--danger)'  },
+              { label:'Taken',   value:taken,   color:'var(--success)' },
+              { label:'Pending', value:pending, color:'var(--warning)' },
+              { label:'Missed',  value:missed,  color:'var(--danger)'  },
             ].map(item => (
               <div className="adh-row" key={item.label}>
                 <div className="adh-dot" style={{ background:item.color }} />
@@ -245,16 +241,16 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
       </div>
 
       {/* HEALTH HEATMAP */}
-      <HealthHeatmap user={user} db={db} tr={tr} />
+      <HealthHeatmap user={user} db={db} />
 
       {/* MISSED ALERT */}
       {missed > 0 && (
         <div className="alert danger" style={{ animation:'fadeUp 0.35s ease' }}>
           <span style={{ fontSize:20 }}>⚠️</span>
           <div>
-            <strong>{t('missedDoseAlert','Missed Dose Alert!')}</strong>
+            <strong>Missed Dose Alert!</strong>
             <div style={{ fontWeight:400, marginTop:2, fontSize:12 }}>
-              {missed} {t('missedNotified','missed dose — caregiver has been notified.')}
+              {missed} missed dose{missed>1?'s':''} — caregiver has been notified.
             </div>
           </div>
         </div>
@@ -263,7 +259,7 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
       {/* EMERGENCY CONTACTS */}
       {withDoctor.length > 0 && (
         <div className="card" style={{ animation:'fadeUp 0.4s 0.1s both' }}>
-          <div className="section-title" style={{ marginBottom:12 }}>🏥 {t('emergencyContacts','Emergency Contacts')}</div>
+          <div className="section-title" style={{ marginBottom:12 }}>🏥 Emergency Contacts</div>
           {withDoctor.map(m => (
             <div key={m.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid rgba(26,111,255,0.08)' }}>
               <div>
@@ -282,21 +278,16 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
       {/* MEDICINE LIST */}
       <div className="card" style={{ animation:'fadeUp 0.5s 0.2s both' }}>
         <div className="section-header">
-          <div className="section-title">💊 {t('todayMedicines',"Today's Medicines")}</div>
+          <div className="section-title">💊 Today's Medicines</div>
           <button className="btn btn-primary" style={{ fontSize:11, padding:'6px 12px' }} onClick={() => onNavigate('add')}>
-            + {t('add','Add')}
+            + Add
           </button>
         </div>
 
         <div className="filter-tabs">
-          {[
-            { f:'all',     lk:'allFilter' },
-            { f:'pending', lk:'pendingFilter' },
-            { f:'taken',   lk:'takenFilter' },
-            { f:'missed',  lk:'missedFilter' },
-          ].map(({f,lk}) => (
+          {['all','pending','taken','missed'].map(f => (
             <button key={f} className={'ftab' + (filter===f?' active':'')} onClick={() => setFilter(f)}>
-              {t(lk, f.charAt(0).toUpperCase()+f.slice(1))}
+              {f.charAt(0).toUpperCase() + f.slice(1)}
               {f !== 'all' && <span style={{ marginLeft:4, fontSize:10, opacity:0.7 }}>({medicines.filter(m=>m.status===f).length})</span>}
             </button>
           ))}
@@ -305,11 +296,11 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
         {filtered.length === 0 ? (
           <div className="empty">
             <div className="e-icon">💊</div>
-            <h3>{filter==='all' ? t('noMedsScheduled','No medicines scheduled') : `${t('noMedsList','No')} ${t(filter+'Filter',filter)} ${t('emptyList','')}`}</h3>
-            <p>{filter==='all' ? t('addFirstMed','Add your first medicine to get started') : ''}</p>
+            <h3>{filter==='all' ? 'No medicines scheduled' : `No ${filter} medicines`}</h3>
+            <p>{filter==='all' ? 'Add your first medicine to get started' : `Your ${filter} list is empty`}</p>
             {filter==='all' && (
               <button className="btn btn-primary" style={{ marginTop:14 }} onClick={() => onNavigate('add')}>
-                + {t('addMedicine','Add Medicine')}
+                + Add Medicine
               </button>
             )}
           </div>
@@ -333,28 +324,29 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
                   ))}
                 </div>
                 <span className={'badge ' + med.status} style={{ marginTop:6, display:'inline-flex' }}>
-                  {med.status==='taken' ? `✅ ${t('takenMeds','Taken')}` : med.status==='missed' ? `❌ ${t('missedFilter','Missed')}` : `⏳ ${t('pending','Pending')}`}
+                  {med.status==='taken' ? '✅ Taken' : med.status==='missed' ? '❌ Missed' : '⏳ Pending'}
                 </span>
               </div>
               <div className="med-right">
+                {/* Only Mark Taken — no missed button */}
                 {med.status === 'pending' && (
-                  <button className="btn btn-success" onClick={() => onStatusUpdate(med.id, 'taken')}>✓ {t('takenMeds','Taken')}</button>
+                  <button className="btn btn-success" onClick={() => onStatusUpdate(med.id, 'taken')}>✓ Taken</button>
                 )}
                 {med.status === 'missed' && (
                   <button className="btn btn-success" style={{ fontSize:10, padding:'4px 8px' }}
-                    onClick={() => onStatusUpdate(med.id, 'taken')}>{t('markTaken','Mark Taken')}</button>
+                    onClick={() => onStatusUpdate(med.id, 'taken')}>Mark Taken</button>
                 )}
                 {med.status === 'taken' && (
-                  <span style={{ fontSize:10, color:'var(--success)', fontWeight:700 }}>👍 {t('done','Done')}!</span>
+                  <span style={{ fontSize:10, color:'var(--success)', fontWeight:700 }}>👍 Done!</span>
                 )}
                 {med.doctorPhone && (
                   <a href={`tel:${med.doctorPhone}`}
                     style={{ fontSize:10, color:'var(--success)', fontWeight:700, textDecoration:'none', marginTop:4 }}>
-                    📞 {t('callDr','Call Dr.')}
+                    📞 Call Dr.
                   </a>
                 )}
                 <button
-                  onClick={() => { if (window.confirm(`Delete "${med.name}"?`)) { onDelete(med.id) } }}
+                  onClick={() => { if (window.confirm(`Delete "${med.name}" from your schedule?`)) { onDelete(med.id) } }}
                   style={{ marginTop:6, background:'rgba(255,77,106,0.1)', border:'1px solid rgba(255,77,106,0.25)', color:'var(--danger)', padding:'4px 10px', borderRadius:8, cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'var(--ff)', transition:'all 0.2s' }}
                   onMouseOver={e => e.currentTarget.style.background='rgba(255,77,106,0.22)'}
                   onMouseOut={e  => e.currentTarget.style.background='rgba(255,77,106,0.1)'}
