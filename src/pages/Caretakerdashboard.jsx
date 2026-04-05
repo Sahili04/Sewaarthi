@@ -178,7 +178,6 @@ export default function CaretakerDashboard({
   // When used as full-page caretaker app, these are passed for header
   isFullPage = false, onLogout, changeLang, initials,
 }) {
-  const [userRole,     setUserRole]     = useState(null)
   const [patientEmail, setPatientEmail] = useState('')
   const [requests,     setRequests]     = useState([])    // patient: incoming
   const [myPatients,   setMyPatients]   = useState([])   // caretaker: accepted patients
@@ -187,42 +186,46 @@ export default function CaretakerDashboard({
   const [loading,      setLoading]      = useState(false)
   const [selectedPat,  setSelectedPat]  = useState(null)
 
-  const t = (k, fb) => tr ? tr(k) : fb
+  const t = (k, fb) => {
+    if (tr) {
+      const val = tr(k);
+      // tr(k) returns the key itself as a string if no translation is found. 
+      // If val is strictly equal to the key AND we have a fallback, use the fallback.
+      if (val === k && fb) return fb;
+      return val || fb;
+    }
+    return fb;
+  }
 
   useEffect(() => {
     if (!user || !db) return
-    const load = async () => {
-      try {
-        const { getDoc: gd, doc: fd } = await import('firebase/firestore')
-        const snap = await gd(fd(db, 'users', user.uid))
-        const role = snap.exists() ? (snap.data().role || 'patient') : 'patient'
-        setUserRole(role)
-        if (role === 'caretaker') fetchMyPatients()
-        else { fetchIncomingRequests(); fetchMyCaretakers() }
-      } catch { setUserRole('patient') }
+    if (isFullPage) {
+      fetchMyPatients()
+    } else {
+      fetchIncomingRequests()
+      fetchMyCaretakers()
     }
-    load()
-  }, [user, db])
+  }, [user, db, isFullPage])
 
   const fetchMyPatients = async () => {
     try {
-      const q = query(collection(db, 'caretakerRequests'), where('caretakerUid','==',user.uid), where('status','==','accepted'))
+      const q = query(collection(db, 'caretakerRequests'), where('caretakerUid','==',user.uid))
       const snap = await getDocs(q)
-      setMyPatients(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setMyPatients(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.status === 'accepted'))
     } catch {}
   }
   const fetchIncomingRequests = async () => {
     try {
-      const q = query(collection(db, 'caretakerRequests'), where('patientUid','==',user.uid), where('status','==','pending'))
+      const q = query(collection(db, 'caretakerRequests'), where('patientUid','==',user.uid))
       const snap = await getDocs(q)
-      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.status === 'pending'))
     } catch {}
   }
   const fetchMyCaretakers = async () => {
     try {
-      const q = query(collection(db, 'caretakerRequests'), where('patientUid','==',user.uid), where('status','==','accepted'))
+      const q = query(collection(db, 'caretakerRequests'), where('patientUid','==',user.uid))
       const snap = await getDocs(q)
-      setMyCaretakers(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setMyCaretakers(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.status === 'accepted'))
     } catch {}
   }
 
@@ -260,7 +263,7 @@ export default function CaretakerDashboard({
   }
 
   // ── CARETAKER FULL-PAGE VIEW ─────────────────────────────────────────────
-  if (userRole === 'caretaker' && isFullPage) {
+  if (isFullPage) {
     return (
       <div style={{ minHeight:'100vh', background:'linear-gradient(135deg,#cce5ff 0%,#daeeff 60%,#eaf4ff 100%)', fontFamily:'var(--ff)' }}>
         {/* Header */}
