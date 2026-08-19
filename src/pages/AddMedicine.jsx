@@ -65,9 +65,12 @@ export default function AddMedicine({ onAdd, onNavigate }) {
         createdAt:   new Date().toISOString(),
       })
       setForm(INIT); setErrors({}); setSuccess(true)
-      setTimeout(() => setSuccess(false), 3500)
-    } catch(err) { console.error(err) }
-    finally { setLoading(false) }
+      setTimeout(() => setSuccess(false), 4000)
+    } catch(err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -78,9 +81,19 @@ export default function AddMedicine({ onAdd, onNavigate }) {
       </div>
 
       {success && (
-        <div className="alert success s1">
-          <span style={{ fontSize:22 }}>✅</span>
-          <div><strong>Medicine Added!</strong><div style={{ fontWeight:400, marginTop:2, fontSize:12 }}>Reminder set and schedule updated.</div></div>
+        <div className="alert success s1" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+            <span style={{ fontSize:22 }}>✅</span>
+            <div>
+              <strong>Medicine Added!</strong>
+              <div style={{ fontWeight:400, marginTop:2, fontSize:12 }}>Reminder set and schedule updated.</div>
+            </div>
+          </div>
+          {onNavigate && (
+            <button onClick={() => onNavigate('dashboard')} className="btn btn-outline" style={{ fontSize:11, padding:'6px 12px' }}>
+              View Dashboard →
+            </button>
+          )}
         </div>
       )}
 

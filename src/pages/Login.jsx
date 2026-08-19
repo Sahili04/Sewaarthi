@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { auth, googleProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from '../firebase'
 import { translations } from '../locales/translations'
 
 function AppLogo({ size = 68 }) {
   return (
     <img src="/logo.png" alt="Sewarthii"
-      style={{ height: size, width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 4px 12px rgba(26,111,255,0.3))', animation:'heroFloat 3s ease-in-out infinite' }}
+      style={{ height: size, width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 4px 12px rgba(26,111,255,0.3))' }}
       onError={e => { e.target.replaceWith(Object.assign(document.createElement('div'), { textContent:'💊', style:'font-size:'+size+'px' })) }}
     />
   )
@@ -19,7 +19,7 @@ const LANGS = [
 
 export default function Login({ lang = 'en', onChangeLang }) {
   const [isSignup,  setIsSignup]  = useState(false)
-  const [role,      setRole]      = useState('patient')
+  const [role,      setRole]      = useState('patient') // Default to patient
   const [email,     setEmail]     = useState('')
   const [password,  setPassword]  = useState('')
   const [error,     setError]     = useState('')
@@ -28,55 +28,112 @@ export default function Login({ lang = 'en', onChangeLang }) {
   const tr = translations[lang] || translations['en']
   const t = (key, fallback) => tr[key] || fallback || key
 
-  const errMsg = code => ({
-    'auth/email-already-in-use': 'Email already registered — please log in.',
-    'auth/wrong-password':        'Wrong password. Try again.',
-    'auth/invalid-credential':    'Wrong email or password.',
-    'auth/user-not-found':        'No account found — please sign up.',
-    'auth/weak-password':         'Password must be at least 6 characters.',
-    'auth/invalid-email':         'Invalid email address.',
-    'auth/popup-closed-by-user':  'Google sign-in was cancelled.',
-    'auth/popup-blocked':         'Popup blocked. Please allow popups for this site.',
-  }[code] || 'Something went wrong. Please try again.')
+  const errMsg = (code, message) => ({
+    'auth/email-already-in-use':   'Email already registered — please log in.',
+    'auth/wrong-password':          'Wrong password. Try again.',
+    'auth/invalid-credential':      'Wrong email or password.',
+    'auth/user-not-found':          'No account found with this email — please sign up.',
+    'auth/weak-password':           'Password must be at least 6 characters.',
+    'auth/invalid-email':           'Invalid email address.',
+    'auth/popup-closed-by-user':    'Google sign-in was closed before completing.',
+    'auth/cancelled-popup-request': 'Sign-in cancelled due to multiple clicks. Please try once.',
+    'auth/popup-blocked':           `Popup was blocked by your browser. Please allow popups for ${window.location.hostname}.`,
+    'auth/operation-not-allowed':   'Google Sign-In is not enabled in Firebase Console (Authentication > Sign-in method).',
+    'auth/unauthorized-domain':     `Domain "${window.location.hostname}" is not authorized in Firebase Console > Authentication > Settings > Authorized Domains.`,
+    'auth/network-request-failed':  'Network connection failed. Please check your internet connection.',
+  }[code] || message || `Sign-in error (${code || 'unknown'}). Please try again.`)
 
-  const saveRoleToDB = async (uid, emailAddr, displayName) => {
+  useEffect(() => {
+    // Check if returning from redirect sign-in
+    import('firebase/auth').then(({ getRedirectResult }) => {
+      getRedirectResult(auth).then(cred => {
+        if (cred?.user) {
+          const currentRole = localStorage.getItem('sw_active_role') || role
+          persistUserRole(cred.user.uid, cred.user.email, cred.user.displayName, currentRole)
+        }
+      }).catch(e => {
+        if (e.code) setError(errMsg(e.code, e.message))
+      })
+    }).catch(() => {})
+  }, [])
+
+  const persistUserRole = async (uid, emailAddr, displayName, chosenRole) => {
     try {
+      const profileData = {
+        role: chosenRole,
+        email: (emailAddr || '').toLowerCase(),
+        displayName: displayName || (emailAddr || '').split('@')[0],
+      }
+      if (chosenRole === 'caretaker') {
+        profileData.profileComplete = true
+      }
+      const existing = localStorage.getItem('sw_profile_' + uid)
+      if (existing) {
+        try {
+          const parsed = JSON.parse(existing)
+          localStorage.setItem('sw_profile_' + uid, JSON.stringify({ ...parsed, ...profileData }))
+        } catch(e) {}
+      }
       const { getFirestore, doc, setDoc } = await import('firebase/firestore')
       const { getApp } = await import('firebase/app')
       const fdb = getFirestore(getApp())
-      // Always store email so caretaker can find patients by email
-      await setDoc(doc(fdb, 'users', uid), {
-        role,
-        email: emailAddr.toLowerCase(),
-        displayName: displayName || emailAddr.split('@')[0],
-        profileComplete: role === 'caretaker' ? true : false,
-      }, { merge: true })
-    } catch(e) { console.error(e) }
+      await setDoc(doc(fdb, 'users', uid), profileData, { merge: true })
+    } catch(e) { console.error('Error saving role to DB:', e) }
   }
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) { setError('Please fill in all fields.'); return }
     setLoading(true); setError('')
+    const normalizedEmail = email.trim().toLowerCase()
+    localStorage.setItem('sw_active_role', role)
+    localStorage.setItem('sw_pending_role_' + normalizedEmail, role)
     try {
       let cred
       if (isSignup) {
         cred = await createUserWithEmailAndPassword(auth, email.trim(), password)
-        await saveRoleToDB(cred.user.uid, cred.user.email, cred.user.displayName)
+        await persistUserRole(cred.user.uid, cred.user.email, cred.user.displayName, role)
       } else {
-        await signInWithEmailAndPassword(auth, email.trim(), password)
+        cred = await signInWithEmailAndPassword(auth, email.trim(), password)
+        await persistUserRole(cred.user.uid, cred.user.email, cred.user.displayName, role)
       }
-    } catch(e) { setError(errMsg(e.code)) }
-    finally    { setLoading(false) }
+    } catch(e) {
+      localStorage.removeItem('sw_active_role')
+      localStorage.removeItem('sw_pending_role_' + normalizedEmail)
+      setError(errMsg(e.code, e.message))
+    }
+    finally { setLoading(false) }
   }
 
   const handleGoogle = async () => {
     setLoading(true); setError('')
+    localStorage.setItem('sw_active_role', role)
     try {
+      googleProvider.setCustomParameters({ prompt: 'select_account' })
       const cred = await signInWithPopup(auth, googleProvider)
-      await saveRoleToDB(cred.user.uid, cred.user.email, cred.user.displayName)
+      if (cred?.user) {
+        const normalizedEmail = cred.user.email?.toLowerCase() || ''
+        localStorage.setItem('sw_pending_role_' + normalizedEmail, role)
+        await persistUserRole(cred.user.uid, cred.user.email, cred.user.displayName, role)
+      }
     }
-    catch(e) { setError(errMsg(e.code)) }
-    finally  { setLoading(false) }
+    catch(e) {
+      console.error('Google Sign-In Error:', e)
+      if (e.code === 'auth/popup-blocked') {
+        // Fallback to redirect sign-in if popup is blocked
+        try {
+          const { signInWithRedirect } = await import('firebase/auth')
+          localStorage.setItem('sw_active_role', role)
+          await signInWithRedirect(auth, googleProvider)
+          return
+        } catch(re) {
+          setError(errMsg(re.code, re.message))
+        }
+      } else {
+        localStorage.removeItem('sw_active_role')
+        setError(errMsg(e.code, e.message))
+      }
+    }
+    finally { setLoading(false) }
   }
 
   return (
@@ -118,26 +175,27 @@ export default function Login({ lang = 'en', onChangeLang }) {
           background:'linear-gradient(90deg, transparent, #1a6fff, #60a5fa, transparent)', borderRadius:2 }} />
 
         {/* Logo */}
-        <div style={{ textAlign:'center', marginBottom:28 }}>
-          <AppLogo size={160} />
+        <div style={{ textAlign:'center', marginBottom:24 }}>
+          <AppLogo size={150} />
           <div style={{ fontSize:12, color:'#8ba0c0', marginTop:4 }}>{t('tagline','Your Smart Medicine Companion')}</div>
         </div>
 
         {/* Role selector */}
         <div style={{ marginBottom:18 }}>
-          <div style={{ fontSize:12, fontWeight:600, color:'#3a5080', marginBottom:8 }}>
-            {isSignup ? t('signupAs','Sign up as') : t('loginAs','Login as')}:
+          <div style={{ fontSize:12, fontWeight:700, color:'#3a5080', marginBottom:8 }}>
+            {isSignup ? t('signupAs','Choose your account type') : t('loginAs','Select your account type')}:
           </div>
           <div style={{ display:'flex', gap:10 }}>
             {['patient','caretaker'].map(r => (
               <button key={r} onClick={() => setRole(r)}
                 style={{
-                  flex:1, padding:'10px', border: role===r ? '2px solid #1a6fff' : '1.5px solid rgba(26,111,255,0.18)',
-                  borderRadius:12, background: role===r ? 'rgba(26,111,255,0.08)' : 'rgba(255,255,255,0.6)',
-                  color: role===r ? '#1a6fff' : '#8ba0c0', fontWeight:700, fontSize:13,
+                  flex:1, padding:'12px 10px', border: role===r ? '2.5px solid #1a6fff' : '1.5px solid rgba(26,111,255,0.18)',
+                  borderRadius:14, background: role===r ? 'rgba(26,111,255,0.1)' : 'rgba(255,255,255,0.6)',
+                  color: role===r ? '#1a6fff' : '#8ba0c0', fontWeight:800, fontSize:13,
                   cursor:'pointer', fontFamily:"'Plus Jakarta Sans',sans-serif", transition:'all 0.2s',
+                  boxShadow: role===r ? '0 4px 14px rgba(26,111,255,0.2)' : 'none'
                 }}>
-                {r === 'patient' ? `🧑‍⚕️ ${t('patient','Patient')}` : `👨‍👩‍👧 ${t('caretaker','Caretaker')}`}
+                {r === 'patient' ? `🧑‍⚕️ ${t('patient','Patient')}` : `👨‍⚕️ ${t('caretaker','Caretaker')}`}
               </button>
             ))}
           </div>
@@ -183,7 +241,7 @@ export default function Login({ lang = 'en', onChangeLang }) {
         </div>
 
         {error && (
-          <div style={{ background:'rgba(255,77,106,0.08)', border:'1px solid rgba(255,77,106,0.25)', color:'#c0392b', padding:'11px 14px', borderRadius:12, fontSize:13, fontWeight:600, marginBottom:16 }}>
+          <div style={{ background:'rgba(255,77,106,0.08)', border:'1px solid rgba(255,77,106,0.25)', color:'#c0392b', padding:'11px 14px', borderRadius:12, fontSize:13, fontWeight:600, marginBottom:16, lineHeight:1.4 }}>
             ⚠️ {error}
           </div>
         )}
@@ -198,37 +256,27 @@ export default function Login({ lang = 'en', onChangeLang }) {
           {loading ? '⏳ Please wait...' : isSignup ? `🚀 ${t('signup','Sign Up')}` : `🔐 ${t('login','Login')}`}
         </button>
 
-        <div style={{ display:'flex', alignItems:'center', gap:10, margin:'4px 0 14px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, margin:'16px 0' }}>
           <div style={{ flex:1, height:1, background:'rgba(26,111,255,0.12)' }} />
-          <span style={{ fontSize:11, color:'#8ba0c0', fontWeight:600 }}>OR</span>
+          <span style={{ fontSize:12, color:'#8ba0c0', fontWeight:600 }}>OR</span>
           <div style={{ flex:1, height:1, background:'rgba(26,111,255,0.12)' }} />
         </div>
 
         <button onClick={handleGoogle} disabled={loading}
-          style={{ width:'100%', padding:'14px', borderRadius:14, border:'1.5px solid rgba(26,111,255,0.18)', background:'rgba(255,255,255,0.9)', fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:10, color:'#0d1b3e', transition:'all 0.22s', boxShadow:'0 2px 8px rgba(26,111,255,0.08)' }}>
-          <svg width="18" height="18" viewBox="0 0 18 18">
-            <path fill="#EA4335" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/>
-            <path fill="#4285F4" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2.01c-.72.48-1.63.77-2.7.77-2.08 0-3.84-1.4-4.47-3.29H1.86v2.07A8 8 0 008.98 17z"/>
-            <path fill="#FBBC05" d="M4.51 10.53A4.82 4.82 0 014.26 9c0-.53.09-1.04.25-1.53V5.4H1.86A8 8 0 001 9c0 1.3.31 2.52.86 3.6l2.65-2.07z"/>
-            <path fill="#34A853" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.86 5.4l2.65 2.07c.63-1.89 2.4-3.29 4.47-3.29z"/>
-          </svg>
-          Continue with Google
+          style={{ width:'100%', padding:'13px', borderRadius:14,
+            border:'1.5px solid rgba(26,111,255,0.18)', background:'rgba(255,255,255,0.85)',
+            color:'#0d1b3e', fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:14,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+            boxShadow:'0 2px 8px rgba(0,0,0,0.06)', transition:'all 0.2s',
+          }}>
+          <span>🌐</span> {t('continueGoogle','Continue with Google')}
         </button>
-
-        <div style={{ textAlign:'center', marginTop:18, fontSize:12, color:'#8ba0c0' }}>
-          {isSignup ? 'Already have an account? ' : "Don't have an account? "}
-          <button onClick={() => { setIsSignup(!isSignup); setError('') }}
-            style={{ background:'none', border:'none', color:'#1a6fff', fontWeight:700, cursor:'pointer', fontSize:12, fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
-            {isSignup ? t('login','Login') : t('signup','Sign Up')}
-          </button>
-        </div>
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@800&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
-        @keyframes pageIn { from{opacity:0;transform:translateY(24px) scale(0.983);}to{opacity:1;transform:translateY(0) scale(1);} }
-        @keyframes heroFloat { 0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-12px) rotate(2deg);} }
-        @keyframes orbFloat { 0%{transform:translate(0,0) scale(1);}50%{transform:translate(10px,-15px) scale(1.02);}100%{transform:translate(-8px,8px) scale(0.98);} }
+        @keyframes pageIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes orbFloat { 0% { transform: scale(1); } 100% { transform: scale(1.15) translate(20px, -20px); } }
       `}</style>
     </div>
   )

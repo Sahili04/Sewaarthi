@@ -79,9 +79,41 @@ function HealthHeatmap({ user, db, tr }) {
   )
 }
 
+function CircleMetric({ pct, color, icon, label, val, onClick }) {
+  const circ = 2 * Math.PI * 24
+  const offset = circ - (pct / 100) * circ
+  return (
+    <div onClick={onClick} style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+      minWidth: 68, cursor: onClick ? 'pointer' : 'default', transition: 'transform 0.2s', zIndex: 2
+    }}>
+      <div style={{
+        position: 'relative', width: 54, height: 54, background: 'rgba(0,0,0,0.15)',
+        borderRadius: '50%', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <svg width="54" height="54" viewBox="0 0 54 54" style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
+          <circle cx="27" cy="27" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
+          <circle cx="27" cy="27" r="24" fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
+            strokeDasharray={circ} strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.22,1,0.36,1)', filter: `drop-shadow(0 0 4px ${color}80)` }}
+          />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+          {icon}
+        </div>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{val}</div>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 600, marginTop: 3 }}>{label}</div>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavigate, user, userProfile, lang, tr, db }) {
   const [filter, setFilter] = useState('all')
   const [waterToday, setWaterToday] = useState(0)
+  const [steps, setSteps] = useState(0)
   const today = new Date().toISOString().split('T')[0]
 
   const t = (key, fallback) => tr ? tr(key) : fallback
@@ -101,17 +133,57 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
   const waterGoal = parseFloat(userProfile?.waterGoalLiters || 2.5) * 1000
 
   useEffect(() => {
-    if (!user || !db) return
+    if (!user) return
+    const localW = localStorage.getItem('sw_water_' + user.uid + '_' + today)
+    if (localW) setWaterToday(Number(localW))
+    const localS = localStorage.getItem('sw_steps_' + user.uid + '_' + today)
+    if (localS) setSteps(Number(localS))
+    if (!db) return
     const fetch = async () => {
       try {
-        const snap = await getDoc(doc(db, 'users', user.uid, 'waterIntake', today))
-        if (snap.exists()) setWaterToday(snap.data().totalMl || 0)
+        const wSnap = await getDoc(doc(db, 'users', user.uid, 'waterIntake', today))
+        if (wSnap.exists() && wSnap.data().totalMl > 0) {
+          setWaterToday(wSnap.data().totalMl)
+          localStorage.setItem('sw_water_' + user.uid + '_' + today, wSnap.data().totalMl.toString())
+        }
+        const sSnap = await getDoc(doc(db, 'users', user.uid, 'dailyHealth', today))
+        if (sSnap.exists() && sSnap.data().steps > 0) {
+          setSteps(sSnap.data().steps)
+          localStorage.setItem('sw_steps_' + user.uid + '_' + today, sSnap.data().steps.toString())
+        }
       } catch(e) {}
     }
     fetch()
-  }, [user, db])
+  }, [user, db, today])
 
   const waterPct = Math.min((waterToday / waterGoal) * 100, 100)
+  const stepsPct = Math.min((steps / 5000) * 100, 100)
+
+  let bmi = 0
+  if (userProfile?.bmi) {
+    bmi = parseFloat(userProfile.bmi).toFixed(1)
+  } else if (userProfile?.height && userProfile?.weight) {
+    let h = parseFloat(userProfile.height)
+    const w = parseFloat(userProfile.weight)
+    if (h > 0 && h <= 8.5) h = h * 30.48 // Convert feet to cm if entered in feet
+    const hM = h / 100
+    if (hM > 0 && w > 0) bmi = (w / (hM * hM)).toFixed(1)
+  }
+  const bmiPct = bmi > 0 ? Math.min(Math.max(((parseFloat(bmi) - 15) / 25) * 100, 0), 100) : 0
+
+  const addSteps = async () => {
+    const newSteps = steps + 500
+    setSteps(newSteps)
+    if (user) {
+      localStorage.setItem('sw_steps_' + user.uid + '_' + today, newSteps.toString())
+    }
+    try {
+      if (user && db) {
+        await setDoc(doc(db, 'users', user.uid, 'dailyHealth', today), { steps: newSteps }, { merge: true })
+      }
+    } catch(e) {}
+  }
+
   const withDoctor = medicines.filter(m => m.doctorPhone)
 
   return (
@@ -119,6 +191,7 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
       <style>{`
         @keyframes medIn { from{opacity:0;transform:translateY(18px) scale(0.97);}to{opacity:1;transform:translateY(0) scale(1);} }
         .med-row { animation: medIn 0.38s cubic-bezier(0.22,1,0.36,1) both; }
+        .tracker-scroll::-webkit-scrollbar { display: none; }
       `}</style>
 
       <div className="greeting s1">
@@ -127,22 +200,69 @@ export default function Dashboard({ medicines, onStatusUpdate, onDelete, onNavig
       </div>
 
       {/* HERO */}
-      <div className="hero-card s2">
-        <div className="hero-glow" />
-        <div className="hero-illustration">🩺</div>
-        <div className="hero-content">
-          <div className="hero-tag">⚡ {t('todayOverview',"Today's Overview")}</div>
-          <h3>{t('stayOnTrack','Stay on track,')}<br />{t('feelGreat','feel great 💪')}</h3>
-          <p>{t('medicineSchedule','Your medicine schedule')}</p>
-          <div className="hero-pills">
-            {[{v:total,l:t('totalMeds','Total')},{v:taken,l:t('takenMeds','Taken')},{v:pending,l:t('leftMeds','Left')}].map(p => (
-              <div className="hero-pill" key={p.l}>
-                <span className="pv">{p.v}</span>
-                <span className="pl">{p.l}</span>
-              </div>
-            ))}
+      <div className="hero-card s2" style={{
+        position: 'relative', overflow: 'hidden', padding: '24px 20px 20px', borderRadius: 28,
+        background: 'linear-gradient(135deg, #0d3b8e 0%, #1a6fff 50%, #38bdf8 100%)',
+        boxShadow: '0 16px 32px rgba(26,111,255,0.25)'
+      }}>
+        <div style={{ position:'absolute', top:'-20%', right:'-10%', width:150, height:150, background:'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)', borderRadius:'50%', pointerEvents:'none' }} />
+        <div style={{ position:'absolute', bottom:'-30%', left:'-10%', width:200, height:200, background:'radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%)', borderRadius:'50%', pointerEvents:'none' }} />
+        
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, position:'relative', zIndex:1 }}>
+          <div>
+            <div style={{ fontSize:11, fontWeight:800, color:'rgba(255,255,255,0.8)', textTransform:'uppercase', letterSpacing:1.2, marginBottom:4 }}>
+              ⚡ {t('todayOverview',"Today's Overview")}
+            </div>
+            <h3 style={{ margin:0, fontSize:22, fontWeight:800, color:'#fff', lineHeight:1.2 }}>
+              {t('stayOnTrack','Stay on track,')}<br />{t('feelGreat','feel great 💪')}
+            </h3>
+          </div>
+          <div style={{ fontSize:42, opacity:0.9, filter:'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' }}>🩺</div>
+        </div>
+
+        <div className="tracker-scroll" style={{
+          display:'flex', gap:18, overflowX:'auto', overflowY:'visible', paddingBottom:8, paddingTop:4, position:'relative', zIndex:1
+        }}>
+          <CircleMetric pct={adherence} color="#a78bfa" icon="💊" label={t('meds','Meds')} val={`${taken}/${total}`} />
+          <CircleMetric pct={waterPct} color="#38bdf8" icon="💧" label={t('water','Water')} val={`${(waterToday/1000).toFixed(1)}L`} onClick={() => onNavigate('water')} />
+          <CircleMetric pct={stepsPct} color="#4ade80" icon="👟" label={t('steps','Steps')} val={steps.toLocaleString()} onClick={addSteps} />
+          <CircleMetric pct={bmiPct} color="#fbbf24" icon="⚖️" label={t('bmi','BMI')} val={bmi > 0 ? bmi : '--'} onClick={() => onNavigate('profile')} />
+        </div>
+      </div>
+
+      {/* ── VOICE ASSISTANT COPILOT CARD ── */}
+      <div className="s2" style={{
+        background: 'linear-gradient(135deg, rgba(26,111,255,0.07) 0%, rgba(56,189,248,0.08) 100%)',
+        border: '1.5px solid rgba(26,111,255,0.2)', borderRadius: 22, padding: '16px 20px', marginTop: 16, marginBottom: 6,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #1a6fff, #38bdf8)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 22,
+            boxShadow: '0 4px 14px rgba(26,111,255,0.35)', flexShrink: 0
+          }}>
+            🎙️
+          </div>
+          <div>
+            <strong style={{ fontSize: 15, color: 'var(--text)' }}>
+              {lang === 'hi' ? 'बोलकर बात करें (वॉयस असिस्टेंट)' : lang === 'mr' ? 'आवाजाने बोला (व्हॉईस असिस्टंट)' : 'Hands-Free Voice Assistant'}
+            </strong>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+              {lang === 'hi' ? 'दवाई, पानी या स्वास्थ्य सवाल बोलकर पूछें' : lang === 'mr' ? 'औषध, पाणी किंवा आरोग्य प्रश्न विचारा' : 'Log water, mark medicines, or ask questions in EN, हिन्दी, or मराठी'}
+            </div>
           </div>
         </div>
+        <button
+          onClick={() => onNavigate('ai')}
+          style={{
+            background: 'linear-gradient(135deg,#1a6fff,#0284c7)', color: '#fff', border: 'none',
+            padding: '10px 18px', borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(26,111,255,0.3)', fontFamily: 'var(--ff)', display: 'flex', alignItems: 'center', gap: 6
+          }}
+        >
+          <span>🎙️ Start Speaking →</span>
+        </button>
       </div>
 
       {/* QUICK ACTIONS */}

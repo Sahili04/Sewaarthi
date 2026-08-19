@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { doc, setDoc, getDoc, collection, getDocs, addDoc, deleteDoc } from 'firebase/firestore'
 
-export default function WaterTracker({ user, db, userProfile, lang, speakReminder, tr }) {
+export default function WaterTracker({ user, db, userProfile, lang, speakReminder, tr, onAddWater }) {
   const [intake,     setIntake]     = useState(0)
   const [goal,       setGoal]       = useState(2500)
   const [reminders,  setReminders]  = useState([])
@@ -12,45 +12,102 @@ export default function WaterTracker({ user, db, userProfile, lang, speakReminde
   const t = (key, fallback) => tr ? tr(key) : fallback
 
   useEffect(() => {
-    if (!user || !db) return
-    fetchIntake(); fetchReminders()
+    if (!user) return
+    const localW = localStorage.getItem('sw_water_' + user.uid + '_' + today)
+    if (localW) setIntake(Number(localW))
+    const localRem = localStorage.getItem('sw_water_reminders_' + user.uid)
+    if (localRem) {
+      try { setReminders(JSON.parse(localRem)) } catch(e) {}
+    }
     if (userProfile?.waterGoalLiters) setGoal(parseFloat(userProfile.waterGoalLiters)*1000)
-  }, [user, db, userProfile])
+    if (db) {
+      fetchIntake()
+      fetchReminders()
+    }
+  }, [user, db, userProfile, today])
 
   const fetchIntake = async () => {
     try {
       const snap = await getDoc(doc(db, 'users', user.uid, 'waterIntake', today))
-      if (snap.exists()) setIntake(snap.data().totalMl || 0)
+      if (snap.exists()) {
+        const total = snap.data().totalMl || 0
+        setIntake(total)
+        localStorage.setItem('sw_water_' + user.uid + '_' + today, total.toString())
+      }
     } catch(e) {}
   }
 
   const fetchReminders = async () => {
     try {
       const snap = await getDocs(collection(db, 'users', user.uid, 'waterReminders'))
-      const list = []; snap.forEach(d => list.push({ id:d.id, ...d.data() })); setReminders(list)
+      const list = []
+      snap.forEach(d => list.push({ id:d.id, ...d.data() }))
+      if (list.length > 0) {
+        setReminders(list)
+        localStorage.setItem('sw_water_reminders_' + user.uid, JSON.stringify(list))
+      }
     } catch(e) {}
   }
 
   const addIntake = async (ml) => {
     const newTotal = intake + ml
-    try {
-      await setDoc(doc(db, 'users', user.uid, 'waterIntake', today), { totalMl:newTotal, date:today })
-      setIntake(newTotal)
+    setIntake(newTotal)
+    if (user) {
+      localStorage.setItem('sw_water_' + user.uid + '_' + today, newTotal.toString())
       const waterScore = Math.min(Math.round((newTotal/goal)*100), 100)
-      await setDoc(doc(db, 'users', user.uid, 'dailyHealth', today), { waterScore, date:today }, { merge:true })
-    } catch(e) {}
+      localStorage.setItem('sw_water_score_' + user.uid + '_' + today, waterScore.toString())
+    }
+    if (onAddWater) {
+      try { onAddWater(ml) } catch(e) {}
+    } else {
+      try {
+        if (user && db) {
+          await setDoc(doc(db, 'users', user.uid, 'waterIntake', today), { totalMl:newTotal, date:today }, { merge:true })
+          const waterScore = Math.min(Math.round((newTotal/goal)*100), 100)
+          await setDoc(doc(db, 'users', user.uid, 'dailyHealth', today), { waterScore, date:today }, { merge:true })
+        }
+      } catch(e) {
+        console.warn('Firestore water sync failed, persisted locally:', e)
+      }
+    }
   }
 
   const addReminder = async () => {
     if (!newTime) return
+    const newRem = { id: Date.now().toString(), time:newTime, amount:newAmount }
+    const updated = [...reminders, newRem]
+    setReminders(updated)
+    if (user) {
+      localStorage.setItem('sw_water_reminders_' + user.uid, JSON.stringify(updated))
+    }
+    const timeToSave = newTime
+    const amountToSave = newAmount
+    setNewTime('')
     try {
-      await addDoc(collection(db, 'users', user.uid, 'waterReminders'), { time:newTime, amount:newAmount })
-      setNewTime(''); fetchReminders()
-    } catch(e) {}
+      if (user && db) {
+        const docRef = await addDoc(collection(db, 'users', user.uid, 'waterReminders'), { time:timeToSave, amount:amountToSave })
+        if (docRef?.id) {
+          const synced = updated.map(r => r.id === newRem.id ? { ...r, id: docRef.id } : r)
+          setReminders(synced)
+          localStorage.setItem('sw_water_reminders_' + user.uid, JSON.stringify(synced))
+        }
+      }
+    } catch(e) {
+      console.warn('Firestore reminder sync failed, persisted locally:', e)
+    }
   }
 
   const deleteReminder = async (id) => {
-    try { await deleteDoc(doc(db, 'users', user.uid, 'waterReminders', id)); fetchReminders() } catch(e) {}
+    const updated = reminders.filter(r => r.id !== id)
+    setReminders(updated)
+    if (user) {
+      localStorage.setItem('sw_water_reminders_' + user.uid, JSON.stringify(updated))
+    }
+    try {
+      if (user && db) {
+        await deleteDoc(doc(db, 'users', user.uid, 'waterReminders', id))
+      }
+    } catch(e) {}
   }
 
   const percent   = Math.min((intake/goal)*100, 100)

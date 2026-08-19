@@ -5,7 +5,7 @@ import AddMedicine from './pages/AddMedicine'
 import AIAssistant from './pages/AIAssistant.jsx'
 import PrescriptionScanner from './pages/PrescriptionScanner'
 import IoTDevice from './pages/IoTDevice'
-import CaretakerDashboard from './pages/CaretakerDashboard'
+import CaretakerDashboard from './pages/Caretakerdashboard'
 import DoctorContacts from './pages/DoctorContacts'
 import Login from './pages/Login'
 import ProfileSetup from './pages/ProfileSetup'
@@ -13,6 +13,7 @@ import WaterTracker from './pages/Watertracker'
 import HabitTracker from './pages/Habittracker'
 import Reports from './pages/Reports'
 import SeedData from './pages/SeedData'
+import SOSButton from './components/SOSButton'
 import { translations, voiceLang } from './locales/translations'
 import './index.css'
 
@@ -136,35 +137,129 @@ export default function App() {
     const unsub = onAuthStateChanged(auth, async u => {
       setUser(u)
       if (u) {
+        // Read explicit role selected on login screen or stored for this user
+        const activeRole = localStorage.getItem('sw_active_role')
+        const emailRole = u.email ? localStorage.getItem('sw_pending_role_' + u.email.toLowerCase()) : null
+        const storedUserRole = localStorage.getItem('sw_role_' + u.uid)
+        const emailName = (u.email || '').toLowerCase()
+        const isEmailCaretaker = emailName.includes('caretaker') || emailName.includes('caretacker')
+        const explicitRole = activeRole || emailRole || storedUserRole || (isEmailCaretaker ? 'caretaker' : null)
+
+        let currentRole = explicitRole || 'patient'
+        let profileComplete = currentRole === 'caretaker'
+
+        // 1. Immediately read cached profile from localStorage
         try {
-          const { getDoc, doc: fDoc } = await import('firebase/firestore')
+          const cached = localStorage.getItem('sw_profile_' + u.uid)
+          if (cached) {
+            const parsed = JSON.parse(cached)
+            setUserProfile(parsed)
+            if (!explicitRole && parsed.role) {
+              currentRole = parsed.role
+            }
+            if (currentRole === 'caretaker') {
+              profileComplete = true
+            } else {
+              profileComplete = !!parsed.profileComplete || (!!parsed.weight && !!parsed.height)
+            }
+          }
+        } catch(e) {}
+
+        // 2. Fetch fresh user data from Firestore
+        try {
+          const { getDoc, doc: fDoc, setDoc: fSetDoc } = await import('firebase/firestore')
           const snap = await getDoc(fDoc(db, 'users', u.uid))
           if (snap.exists()) {
             const data = snap.data()
-            setUserProfile(data)
-            const role = data.role || 'patient'
-            setUserRole(role)
-            // Caretakers skip profile setup
-            if (role === 'caretaker') {
-              setNeedsProfile(false)
-            } else {
-              setNeedsProfile(!data.profileComplete)
+            if (!explicitRole && data.role) {
+              currentRole = data.role
             }
-          } else {
-            setNeedsProfile(true)
+            const updatedProfile = { ...data, role: currentRole }
+            if (currentRole === 'caretaker') {
+              updatedProfile.profileComplete = true
+            }
+            setUserProfile(updatedProfile)
+            localStorage.setItem('sw_profile_' + u.uid, JSON.stringify(updatedProfile))
+            if (currentRole === 'caretaker') {
+              profileComplete = true
+            } else {
+              profileComplete = !!data.profileComplete || (!!data.weight && !!data.height)
+            }
           }
-        } catch(e) { setNeedsProfile(false) }
+
+          // If an explicit role was detected/chosen, make sure Firestore has it synced
+          if (explicitRole) {
+            await fSetDoc(fDoc(db, 'users', u.uid), {
+              role: explicitRole,
+              email: u.email ? u.email.toLowerCase() : '',
+              displayName: u.displayName || (u.email ? u.email.split('@')[0] : 'User'),
+              ...(explicitRole === 'caretaker' ? { profileComplete: true } : {})
+            }, { merge: true })
+          }
+        } catch(e) {
+          console.warn('Firestore user fetch failed:', e)
+        }
+
+        // Clean up pending login flags
+        localStorage.removeItem('sw_active_role')
+        if (u.email) {
+          localStorage.removeItem('sw_pending_role_' + u.email.toLowerCase())
+        }
+
+        setUserRole(currentRole)
+        if (currentRole === 'caretaker') {
+          setNeedsProfile(false)
+        } else {
+          setNeedsProfile(!profileComplete)
+        }
+      } else {
+        setUserProfile(null)
+        setUserRole('patient')
+        setNeedsProfile(false)
       }
       setAuthLoading(false)
     })
     return () => unsub()
   }, [])
 
+  // ── Helper to load/save local medicines ──
+  const loadLocalMedicines = (uid) => {
+    try {
+      const data = localStorage.getItem('sw_meds_' + uid)
+      return data ? JSON.parse(data) : []
+    } catch(e) { return [] }
+  }
+
+  const saveLocalMedicines = (uid, meds) => {
+    try {
+      localStorage.setItem('sw_meds_' + uid, JSON.stringify(meds))
+    } catch(e) {}
+  }
+
   // ── Load medicines ──
   useEffect(() => {
     if (!user) { setMedicines([]); return }
-    const q = query(collection(db, 'medicines'), where('userId', '==', user.uid))
-    return onSnapshot(q, snap => setMedicines(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+    // 1. Instantly load from local storage cache
+    const local = loadLocalMedicines(user.uid)
+    if (local && local.length > 0) {
+      setMedicines(local)
+    }
+    // 2. Subscribe to Firestore with fallback
+    try {
+      const q = query(collection(db, 'medicines'), where('userId', '==', user.uid))
+      const unsub = onSnapshot(q, snap => {
+        const firestoreMeds = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        if (firestoreMeds.length > 0 || local.length === 0) {
+          setMedicines(firestoreMeds)
+          saveLocalMedicines(user.uid, firestoreMeds)
+        }
+      }, err => {
+        console.warn('Firestore onSnapshot error, using local medicines cache:', err)
+      })
+      return () => unsub()
+    } catch(e) {
+      console.warn('Firestore query error:', e)
+    }
   }, [user])
 
   // ── Medicine reminder checker ──
@@ -225,17 +320,75 @@ export default function App() {
 
   const addMedicine = async med => {
     if (!user) return
-    await addDoc(collection(db, 'medicines'), { ...med, userId: user.uid })
+    const medWithUser = {
+      ...med,
+      id: med.id || Date.now().toString(),
+      userId: user.uid
+    }
+    // Optimistic local state and storage
+    setMedicines(prev => {
+      const exists = prev.some(m => m.id === medWithUser.id || (m.name === medWithUser.name && m.time === medWithUser.time))
+      const updated = exists ? prev.map(m => (m.id === medWithUser.id || (m.name === medWithUser.name && m.time === medWithUser.time)) ? medWithUser : m) : [medWithUser, ...prev]
+      saveLocalMedicines(user.uid, updated)
+      return updated
+    })
+
+    // Background Firestore persist
+    try {
+      const docRef = await addDoc(collection(db, 'medicines'), medWithUser)
+      if (docRef?.id) {
+        setMedicines(prev => {
+          const updated = prev.map(m => m.id === medWithUser.id ? { ...m, id: docRef.id } : m)
+          saveLocalMedicines(user.uid, updated)
+          return updated
+        })
+      }
+    } catch(e) {
+      console.warn('Firestore addDoc failed, persisted locally:', e)
+    }
   }
 
   const updateStatus = async (id, status) => {
-    setMedicines(prev => prev.map(m => m.id === id ? { ...m, status } : m))
-    try { await updateDoc(doc(db, 'medicines', id), { status }) } catch(e) { console.error(e) }
+    setMedicines(prev => {
+      const updated = prev.map(m => m.id === id ? { ...m, status } : m)
+      if (user) saveLocalMedicines(user.uid, updated)
+      return updated
+    })
+    try { await updateDoc(doc(db, 'medicines', id), { status }) } catch(e) {
+      console.warn('Firestore updateDoc failed, status updated locally:', e)
+    }
   }
 
   const deleteMedicine = async id => {
-    setMedicines(prev => prev.filter(m => m.id !== id))
-    try { await deleteDoc(doc(db, 'medicines', id)) } catch(e) { console.error(e) }
+    setMedicines(prev => {
+      const updated = prev.filter(m => m.id !== id)
+      if (user) saveLocalMedicines(user.uid, updated)
+      return updated
+    })
+    try { await deleteDoc(doc(db, 'medicines', id)) } catch(e) {
+      console.warn('Firestore deleteDoc failed, deleted locally:', e)
+    }
+  }
+
+  const addWaterIntake = async (ml) => {
+    if (!user) return 0
+    const today = new Date().toISOString().split('T')[0]
+    const localW = Number(localStorage.getItem('sw_water_' + user.uid + '_' + today) || 0)
+    const newTotal = localW + ml
+    localStorage.setItem('sw_water_' + user.uid + '_' + today, newTotal.toString())
+    const waterGoal = parseFloat(userProfile?.waterGoalLiters || 2.5) * 1000
+    const waterScore = Math.min(Math.round((newTotal / waterGoal) * 100), 100)
+    localStorage.setItem('sw_water_score_' + user.uid + '_' + today, waterScore.toString())
+
+    try {
+      if (db) {
+        await setDoc(doc(db, 'users', user.uid, 'waterIntake', today), { totalMl: newTotal, date: today }, { merge: true })
+        await setDoc(doc(db, 'users', user.uid, 'dailyHealth', today), { waterScore, date: today }, { merge: true })
+      }
+    } catch(e) {
+      console.warn('Firestore water sync failed, saved locally:', e)
+    }
+    return newTotal
   }
 
   const handleTaken  = async () => {
@@ -256,7 +409,18 @@ export default function App() {
     }
   }
 
-  const handleLogout = async () => { await signOut(auth); setPage('dashboard'); checkedRef.current = {} }
+  const handleLogout = async () => {
+    try {
+      if (user) {
+        localStorage.removeItem('sw_profile_' + user.uid)
+      }
+      localStorage.removeItem('sw_active_role')
+    } catch(e) {}
+    setUserRole('patient')
+    await signOut(auth)
+    setPage('dashboard')
+    checkedRef.current = {}
+  }
 
   // Hidden seed route — accessible at /?seed=1
   if (new URLSearchParams(window.location.search).get('seed') === '1' && user) {
@@ -284,7 +448,27 @@ export default function App() {
 
   const sharedProps = { lang, tr }
 
-  // ── CARETAKER: dedicated full-page experience, no patient nav ──
+  const handleToggleRole = async (targetRole) => {
+    if (!user) return
+    const newRole = targetRole || (userRole === 'caretaker' ? 'patient' : 'caretaker')
+    setUserRole(newRole)
+    if (newRole === 'caretaker') {
+      setNeedsProfile(false)
+    }
+    try {
+      const { doc: fDoc, setDoc: fSetDoc } = await import('firebase/firestore')
+      await fSetDoc(fDoc(db, 'users', user.uid), { role: newRole, profileComplete: true }, { merge: true })
+      const cached = localStorage.getItem('sw_profile_' + user.uid)
+      const prof = cached ? JSON.parse(cached) : {}
+      prof.role = newRole
+      prof.profileComplete = true
+      localStorage.setItem('sw_profile_' + user.uid, JSON.stringify(prof))
+    } catch(e) {
+      console.error('Error toggling role:', e)
+    }
+  }
+
+  // ── CARETAKER ACCOUNT: dedicated full-page experience, no patient nav ──
   if (userRole === 'caretaker') {
     return (
       <CaretakerDashboard
@@ -294,6 +478,7 @@ export default function App() {
         initials={initials}
         changeLang={changeLang}
         onLogout={handleLogout}
+        onToggleRole={handleToggleRole}
       />
     )
   }
@@ -354,9 +539,9 @@ export default function App() {
         </div>
         <div className="header-right">
           <LanguageSelector lang={lang} onChange={changeLang} />
-          <button onClick={() => setIsCaretaker(c => !c)}
-            style={{ background: isCaretaker ? 'rgba(0,196,140,0.15)' : 'rgba(26,111,255,0.1)', border: `1px solid ${isCaretaker ? 'rgba(0,196,140,0.3)':'rgba(26,111,255,0.2)'}`, color: isCaretaker ? 'var(--success)':'var(--blue)', padding:'5px 10px', borderRadius:9, cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'var(--ff)' }}>
-            {isCaretaker ? `👨‍⚕️ ${tr('caretaker')}` : `👤 ${tr('patient')}`}
+          <button onClick={() => handleToggleRole('caretaker')}
+            style={{ background:'rgba(26,111,255,0.08)', border:'1px solid rgba(26,111,255,0.22)', color:'var(--blue)', padding:'5px 10px', borderRadius:9, cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'var(--ff)' }}>
+            👨‍⚕️ Caretaker Mode
           </button>
           <button onClick={handleLogout}
             style={{ background:'rgba(255,77,106,0.1)', border:'1px solid rgba(255,77,106,0.22)', color:'#e03355', padding:'5px 10px', borderRadius:9, cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'var(--ff)' }}>
@@ -371,35 +556,46 @@ export default function App() {
         <div className="sidebar-logo">
           <AppLogo size={42} />
         </div>
-        <div style={{ padding:'0 8px 12px', borderBottom:'1px solid rgba(26,111,255,0.1)', marginBottom:8 }}>
+        <div style={{ padding:'0 8px 12px', borderBottom:'1px solid rgba(26,111,255,0.1)', marginBottom:8, flexShrink:0 }}>
           <LanguageSelector lang={lang} onChange={changeLang} />
         </div>
         <nav className="nav-section">
           <div className="nav-label">{tr('mainMenu')}</div>
           {NAV.map(item => (
-            <button key={item.id} className={'nav-item' + (page===item.id&&!isCaretaker?' active':'')}
-              onClick={() => { setIsCaretaker(false); navigate(item.id) }}>
+            <button key={item.id} className={'nav-item' + (page===item.id?' active':'')}
+              onClick={() => navigate(item.id)}>
               <span className="nav-icon">{item.icon}</span>
               <span className="nav-label">{tr(item.labelKey)}</span>
             </button>
           ))}
-          <button className={'nav-item' + (page==='iot'&&!isCaretaker?' active':'')}
-            onClick={() => { setIsCaretaker(false); navigate('iot') }}>
+          <button className={'nav-item' + (page==='iot'?' active':'')}
+            onClick={() => navigate('iot')}>
             <span className="nav-icon">🔌</span>
             <span className="nav-label">{tr('device')}</span>
           </button>
-          <button className={'nav-item' + (page==='profile'&&!isCaretaker?' active':'')}
-            onClick={() => { setIsCaretaker(false); navigate('profile') }}>
+          <button className={'nav-item' + (page==='profile'?' active':'')}
+            onClick={() => navigate('profile')}>
             <span className="nav-icon">👤</span>
             <span className="nav-label">{tr('healthBmi')}</span>
           </button>
           <div className="nav-label" style={{ marginTop:14 }}>{tr('caretaker')}</div>
-          <button className={'nav-item' + (isCaretaker?' active':'')}
-            onClick={() => setIsCaretaker(true)}>
+          <button className={'nav-item' + (page==='care'?' active':'')}
+            onClick={() => navigate('care')}>
             <span className="nav-icon">👨‍⚕️</span>
             <span className="nav-label">{tr('care')}</span>
           </button>
         </nav>
+        <div style={{ padding:'0 14px 10px' }}>
+          <button onClick={() => handleToggleRole('caretaker')} style={{
+            width:'100%', background:'rgba(26,111,255,0.08)', border:'1.5px solid rgba(26,111,255,0.22)',
+            color:'var(--blue)', padding:'8px 10px', borderRadius:10, cursor:'pointer', fontSize:11, fontWeight:800,
+            fontFamily:'var(--ff)', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+            transition:'all 0.2s'
+          }}>
+            <span>👨‍⚕️</span>
+            <span>Switch to Caretaker Mode</span>
+          </button>
+        </div>
         <div className="sidebar-bottom">
           <div className="header-avatar">{initials}</div>
           <div className="user-info">
@@ -411,37 +607,33 @@ export default function App() {
 
       {/* ── MAIN ── */}
       <main className="main-content">
-        <div key={page + isCaretaker} className="page-enter">
-          {isCaretaker ? (
-            <CaretakerDashboard medicines={medicines} currentUserName={displayName} user={user} db={db} {...sharedProps} />
-          ) : (
-            <>
-              {page==='dashboard' && <Dashboard medicines={medicines} onStatusUpdate={updateStatus} onDelete={deleteMedicine} onNavigate={navigate} user={user} userProfile={userProfile} {...sharedProps} />}
-              {page==='add'       && <AddMedicine onAdd={addMedicine} onNavigate={navigate} {...sharedProps} />}
-              {page==='ai'        && <AIAssistant medicines={medicines} {...sharedProps} />}
-              {page==='scanner'   && <PrescriptionScanner onAdd={addMedicine} onNavigate={navigate} {...sharedProps} />}
-              {page==='doctors'   && <DoctorContacts userId={user.uid} {...sharedProps} />}
-              {page==='iot'       && <IoTDevice medicines={medicines} onStatusUpdate={updateStatus} {...sharedProps} />}
-              {page==='water'     && <WaterTracker user={user} db={db} userProfile={userProfile} lang={lang} speakReminder={speakReminder} {...sharedProps} />}
-              {page==='habits'    && <HabitTracker user={user} db={db} {...sharedProps} />}
-              {page==='reports'   && <Reports user={user} db={db} medicines={medicines} userProfile={userProfile} {...sharedProps} />}
-              {page==='profile'   && <ProfileSetup user={user} db={db} lang={lang} tr={tr} inline onComplete={(p) => setUserProfile(p)} />}
-            </>
-          )}
+        <div key={page} className="page-enter">
+          {page==='dashboard' && <Dashboard medicines={medicines} onStatusUpdate={updateStatus} onDelete={deleteMedicine} onNavigate={navigate} user={user} userProfile={userProfile} db={db} {...sharedProps} />}
+          {page==='add'       && <AddMedicine onAdd={addMedicine} onNavigate={navigate} {...sharedProps} />}
+          {page==='ai'        && <AIAssistant medicines={medicines} onAddMedicine={addMedicine} onUpdateStatus={updateStatus} onAddWater={addWaterIntake} onNavigate={navigate} user={user} userProfile={userProfile} {...sharedProps} />}
+          {page==='scanner'   && <PrescriptionScanner onAdd={addMedicine} onNavigate={navigate} {...sharedProps} />}
+          {page==='doctors'   && <DoctorContacts userId={user.uid} {...sharedProps} />}
+          {page==='iot'       && <IoTDevice medicines={medicines} onStatusUpdate={updateStatus} {...sharedProps} />}
+          {page==='water'     && <WaterTracker user={user} db={db} userProfile={userProfile} lang={lang} speakReminder={speakReminder} onAddWater={addWaterIntake} {...sharedProps} />}
+          {page==='habits'    && <HabitTracker user={user} db={db} {...sharedProps} />}
+          {page==='reports'   && <Reports user={user} db={db} medicines={medicines} userProfile={userProfile} {...sharedProps} />}
+          {page==='profile'   && <ProfileSetup user={user} db={db} lang={lang} tr={tr} inline onComplete={(p) => setUserProfile(p)} />}
+          {page==='care'      && <CaretakerDashboard medicines={medicines} currentUserName={displayName} user={user} db={db} isFullPage={false} onToggleRole={handleToggleRole} {...sharedProps} />}
+          <SOSButton user={user} userProfile={userProfile} />
         </div>
       </main>
 
       {/* ── BOTTOM NAV ── */}
       <nav className="bottom-nav">
         {NAV.slice(0,5).map(item => (
-          <button key={item.id} className={'nav-item' + (page===item.id&&!isCaretaker?' active':'')}
-            onClick={() => { setIsCaretaker(false); navigate(item.id) }}>
+          <button key={item.id} className={'nav-item' + (page===item.id?' active':'')}
+            onClick={() => navigate(item.id)}>
             <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{tr(item.labelKey)}</span>
           </button>
         ))}
-        <button className={'nav-item' + (isCaretaker?' active':'')}
-          onClick={() => setIsCaretaker(true)}>
+        <button className={'nav-item' + (page==='care'?' active':'')}
+          onClick={() => navigate('care')}>
           <span className="nav-icon">👨‍⚕️</span>
           <span className="nav-label">{tr('care')}</span>
         </button>
