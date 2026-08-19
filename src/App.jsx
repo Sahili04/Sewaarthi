@@ -539,10 +539,6 @@ export default function App() {
         </div>
         <div className="header-right">
           <LanguageSelector lang={lang} onChange={changeLang} />
-          <button onClick={() => handleToggleRole('caretaker')}
-            style={{ background:'rgba(26,111,255,0.08)', border:'1px solid rgba(26,111,255,0.22)', color:'var(--blue)', padding:'5px 10px', borderRadius:9, cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'var(--ff)' }}>
-            👨‍⚕️ Caretaker Mode
-          </button>
           <button onClick={handleLogout}
             style={{ background:'rgba(255,77,106,0.1)', border:'1px solid rgba(255,77,106,0.22)', color:'#e03355', padding:'5px 10px', borderRadius:9, cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'var(--ff)' }}>
             {tr('logout')}
@@ -585,17 +581,6 @@ export default function App() {
             <span className="nav-label">{tr('care')}</span>
           </button>
         </nav>
-        <div style={{ padding:'0 14px 10px' }}>
-          <button onClick={() => handleToggleRole('caretaker')} style={{
-            width:'100%', background:'rgba(26,111,255,0.08)', border:'1.5px solid rgba(26,111,255,0.22)',
-            color:'var(--blue)', padding:'8px 10px', borderRadius:10, cursor:'pointer', fontSize:11, fontWeight:800,
-            fontFamily:'var(--ff)', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-            transition:'all 0.2s'
-          }}>
-            <span>👨‍⚕️</span>
-            <span>Switch to Caretaker Mode</span>
-          </button>
-        </div>
         <div className="sidebar-bottom">
           <div className="header-avatar">{initials}</div>
           <div className="user-info">

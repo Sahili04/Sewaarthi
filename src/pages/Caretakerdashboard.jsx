@@ -467,14 +467,6 @@ export default function CaretakerDashboard({
               <option value="mr">🇮🇳 मरा</option>
             </select>
           )}
-          {onToggleRole && (
-            <button onClick={() => onToggleRole('patient')}
-              title="Switch to Patient Dashboard"
-              style={{ background:'rgba(26,111,255,0.08)', border:'1.5px solid rgba(26,111,255,0.22)', color:'var(--blue)', padding:'7px 14px', borderRadius:10, cursor:'pointer', fontSize:12, fontWeight:800, fontFamily:'var(--ff)', display:'flex', alignItems:'center', gap:6 }}>
-              <span>👤</span>
-              <span>Switch to Patient App</span>
-            </button>
-          )}
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ width:34, height:34, borderRadius:'50%', background:'linear-gradient(135deg,#1a6fff,#4a90e2)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:14 }}>
               {initials}
