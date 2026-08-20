@@ -369,11 +369,7 @@ export default function Login({ lang = 'en', onChangeLang, onGuestLogin }) {
 
             {error && (
               <div style={{ background:'rgba(255,77,106,0.08)', border:'1px solid rgba(255,77,106,0.25)', color:'#c0392b', padding:'11px 14px', borderRadius:12, fontSize:13, fontWeight:600, marginBottom:16, lineHeight:1.4 }}>
-                <div style={{ marginBottom:6 }}>⚠️ {error}</div>
-                <button type="button" onClick={() => handleDemoLogin(role)}
-                  style={{ background:'#1a6fff', color:'#fff', border:'none', padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
-                  ⚡ Open in Demo / Offline Mode ({role === 'caretaker' ? 'Caretaker' : 'Patient'})
-                </button>
+                ⚠️ {error}
               </div>
             )}
 
@@ -399,27 +395,10 @@ export default function Login({ lang = 'en', onChangeLang, onGuestLogin }) {
                 color:'#0d1b3e', fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:14,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-                boxShadow:'0 2px 8px rgba(0,0,0,0.06)', transition:'all 0.2s', marginBottom:12
+                boxShadow:'0 2px 8px rgba(0,0,0,0.06)', transition:'all 0.2s',
               }}>
               <span>🌐</span> {t('continueGoogle','Continue with Google')}
             </button>
-
-            {/* Quick 1-Click Demo Explore */}
-            <div style={{ marginTop:14, paddingTop:14, borderTop:'1px dashed rgba(26,111,255,0.15)', textAlign:'center' }}>
-              <div style={{ fontSize:11, color:'#64748b', fontWeight:600, marginBottom:8 }}>
-                🚀 Quick Preview / Offline Testing:
-              </div>
-              <div style={{ display:'flex', gap:8 }}>
-                <button type="button" onClick={() => handleDemoLogin('patient')}
-                  style={{ flex:1, padding:'9px 8px', borderRadius:10, border:'1.5px solid rgba(26,111,255,0.2)', background:'rgba(26,111,255,0.06)', color:'#1a6fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Plus Jakarta Sans',sans-serif", transition:'all 0.2s' }}>
-                  🧑‍⚕️ Patient Demo
-                </button>
-                <button type="button" onClick={() => handleDemoLogin('caretaker')}
-                  style={{ flex:1, padding:'9px 8px', borderRadius:10, border:'1.5px solid rgba(26,111,255,0.2)', background:'rgba(26,111,255,0.06)', color:'#1a6fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Plus Jakarta Sans',sans-serif", transition:'all 0.2s' }}>
-                  👨‍⚕️ Caretaker Demo
-                </button>
-              </div>
-            </div>
           </>
         )}
       </div>
