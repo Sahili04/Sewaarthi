@@ -127,16 +127,29 @@ const NAV = [
 export default function App() {
   const [page,        setPage]        = useState('dashboard')
   const [medicines,   setMedicines]   = useState([])
-  // Use auth.currentUser (sync) to decide initial loading state instantly
-  const [user,        setUser]        = useState(() => auth.currentUser)
-  const [authLoading, setAuthLoading] = useState(() => auth.currentUser === null ? false : true)
+  // Use auth.currentUser or cached guest demo session
+  const [user, setUser] = useState(() => {
+    if (auth.currentUser) return auth.currentUser
+    try {
+      const guest = localStorage.getItem('sw_guest_user')
+      if (guest) return JSON.parse(guest)
+    } catch(e) {}
+    return null
+  })
+  const [authLoading, setAuthLoading] = useState(() => (auth.currentUser === null && !localStorage.getItem('sw_guest_user')) ? false : true)
   const authResolved = useRef(false)
   const [reminderMed, setReminderMed] = useState(null)
   const [waterAlert,  setWaterAlert]  = useState(null)
   const [isCaretaker, setIsCaretaker] = useState(false)
   const [lang,        setLangState]   = useState(getLang())
   const [userProfile, setUserProfile] = useState(null)
-  const [userRole,    setUserRole]    = useState('patient')
+  const [userRole,    setUserRole]    = useState(() => {
+    try {
+      const guest = localStorage.getItem('sw_guest_user')
+      if (guest) return JSON.parse(guest).role || 'patient'
+    } catch(e) {}
+    return 'patient'
+  })
   const checkedRef = useRef({})
   const snoozeRef  = useRef({})
   const waterSnoozeRef = useRef({})
@@ -169,9 +182,9 @@ export default function App() {
       if (!authResolved.current) {
         authResolved.current = true
         clearTimeout(timeout)
-        setUser(u)
+        if (u) setUser(u)
         setAuthLoading(false)
-      } else {
+      } else if (u) {
         setUser(u)
       }
 
@@ -248,6 +261,20 @@ export default function App() {
           setUserRole(currentRole)
         }
       } else {
+        // If not a Firebase user, check if we have an active guest/demo user
+        const guest = localStorage.getItem('sw_guest_user')
+        if (guest) {
+          try {
+            const parsedGuest = JSON.parse(guest)
+            setUser(parsedGuest)
+            const role = parsedGuest.role || localStorage.getItem('sw_active_role') || 'patient'
+            setUserRole(role)
+            const cached = localStorage.getItem('sw_profile_' + parsedGuest.uid)
+            if (cached) setUserProfile(JSON.parse(cached))
+            return
+          } catch(e) {}
+        }
+        setUser(null)
         setUserProfile(null)
         setUserRole('patient')
       }
@@ -448,9 +475,12 @@ export default function App() {
         localStorage.removeItem('sw_profile_' + user.uid)
       }
       localStorage.removeItem('sw_active_role')
+      localStorage.removeItem('sw_guest_user')
     } catch(e) {}
+    setUser(null)
     setUserRole('patient')
-    await signOut(auth)
+    setUserProfile(null)
+    try { await signOut(auth) } catch(e) {}
     setPage('dashboard')
     checkedRef.current = {}
   }
@@ -461,16 +491,42 @@ export default function App() {
   }
 
   if (authLoading) return (
-    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#cce5ff,#daeeff)' }}>
-      <img src="/logo.png" alt="Sewarthii"
-        style={{ height: 100, width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 4px 12px rgba(26,111,255,0.3))' }}
-        onError={e => { e.target.replaceWith(Object.assign(document.createElement('div'), { textContent:'💊', style:'font-size:100px' })) }}
-      />
-      <div style={{ fontSize:12, color:'#8ba0c0', marginTop:8 }}>{tr('tagline') || 'Loading your health data...'}</div>
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#0f172a,#1e3a5f)' }}>
+      <div style={{ textAlign:'center', color:'#fff' }}>
+        <div style={{ fontSize:56, marginBottom:16, animation:'spin 1.5s linear infinite', display:'inline-block' }}>💊</div>
+        <div style={{ fontSize:22, fontWeight:800, color:'#fff', marginBottom:8 }}>Sewarthii</div>
+        <div style={{ fontSize:14, color:'#94a3b8' }}>Loading your health data...</div>
+        <div style={{ marginTop:24, display:'flex', gap:8, justifyContent:'center' }}>
+          {[0,1,2].map(i => (
+            <div key={i} style={{ width:10, height:10, borderRadius:'50%', background:'#38bdf8',
+              animation:`bounce 1.2s ease-in-out ${i*0.2}s infinite` }} />
+          ))}
+        </div>
+      </div>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes bounce { 0%,80%,100%{transform:scale(0.6);opacity:0.5} 40%{transform:scale(1);opacity:1} }
+      `}</style>
     </div>
+
   )
 
-  if (!user) return <Suspense fallback={<PageLoader />}><Login lang={lang} onChangeLang={changeLang} /></Suspense>
+  if (!user) return (
+    <Suspense fallback={<PageLoader />}>
+      <Login
+        lang={lang}
+        onChangeLang={changeLang}
+        onGuestLogin={(guestUser) => {
+          setUser(guestUser)
+          setUserRole(guestUser.role || 'patient')
+          const cached = localStorage.getItem('sw_profile_' + guestUser.uid)
+          if (cached) {
+            try { setUserProfile(JSON.parse(cached)) } catch(e) {}
+          }
+        }}
+      />
+    </Suspense>
+  )
 
   const initials    = (user.displayName || user.email || 'U')[0].toUpperCase()
   const displayName = user.displayName || user.email?.split('@')[0] || 'User'

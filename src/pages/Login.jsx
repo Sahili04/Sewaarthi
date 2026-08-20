@@ -17,7 +17,7 @@ const LANGS = [
   { code:'mr', label:'🇮🇳 मराठी' },
 ]
 
-export default function Login({ lang = 'en', onChangeLang }) {
+export default function Login({ lang = 'en', onChangeLang, onGuestLogin }) {
   const [isSignup,       setIsSignup]       = useState(false)
   const [role,           setRole]           = useState('patient')
   const [email,          setEmail]          = useState('')
@@ -46,8 +46,48 @@ export default function Login({ lang = 'en', onChangeLang }) {
     'auth/popup-blocked':           `Popup was blocked by your browser. Please allow popups for ${window.location.hostname}.`,
     'auth/operation-not-allowed':   'Google Sign-In is not enabled in Firebase Console (Authentication > Sign-in method).',
     'auth/unauthorized-domain':     `Domain "${window.location.hostname}" is not authorized in Firebase Console > Authentication > Settings > Authorized Domains.`,
-    'auth/network-request-failed':  'Network connection failed. Please check your internet connection.',
+    'auth/network-request-failed':  'Network connection failed. Click below to continue in Offline Demo Mode!',
   }[code] || message || `Sign-in error (${code || 'unknown'}). Please try again.`)
+
+  const handleDemoLogin = (demoRole = role) => {
+    const demoId = demoRole === 'caretaker' ? 'demo_caretaker_101' : 'demo_patient_101'
+    const demoUser = {
+      uid: demoId,
+      email: demoRole === 'caretaker' ? 'caretaker.demo@sewarthii.com' : 'patient.demo@sewarthii.com',
+      displayName: demoRole === 'caretaker' ? 'Dr. Sharma (Caretaker)' : 'Aarav Patel',
+      role: demoRole,
+      isDemo: true,
+    }
+    const demoProfile = {
+      role: demoRole,
+      displayName: demoUser.displayName,
+      email: demoUser.email,
+      height: '172',
+      weight: '68',
+      heightUnit: 'cm',
+      bmi: '23.0',
+      waterGoalLiters: '2.5',
+      profileComplete: true,
+    }
+    // Preload sample medicines for patient demo if empty
+    if (demoRole === 'patient') {
+      const existingMeds = localStorage.getItem('sw_meds_' + demoId)
+      if (!existingMeds || JSON.parse(existingMeds).length === 0) {
+        const sampleMeds = [
+          { id: 'm1', name: 'Metformin', dosage: '500mg', time: '08:00', times: ['08:00'], foodTiming: 'after', frequency: 'daily', status: 'pending', userId: demoId, color: '#38bdf8', category: 'Diabetes' },
+          { id: 'm2', name: 'Amlodipine', dosage: '5mg', time: '13:00', times: ['13:00'], foodTiming: 'after', frequency: 'daily', status: 'pending', userId: demoId, color: '#00c48c', category: 'Blood Pressure' },
+          { id: 'm3', name: 'Vitamin D3', dosage: '60,000 IU', time: '20:00', times: ['20:00'], foodTiming: 'with', frequency: 'weekly', status: 'pending', userId: demoId, color: '#fbbf24', category: 'Supplement' }
+        ]
+        localStorage.setItem('sw_meds_' + demoId, JSON.stringify(sampleMeds))
+      }
+    }
+
+    localStorage.setItem('sw_guest_user', JSON.stringify(demoUser))
+    localStorage.setItem('sw_role_' + demoId, demoRole)
+    localStorage.setItem('sw_profile_' + demoId, JSON.stringify(demoProfile))
+    localStorage.setItem('sw_active_role', demoRole)
+    onGuestLogin?.(demoUser)
+  }
 
   useEffect(() => {
     // Check if returning from redirect sign-in
@@ -329,7 +369,11 @@ export default function Login({ lang = 'en', onChangeLang }) {
 
             {error && (
               <div style={{ background:'rgba(255,77,106,0.08)', border:'1px solid rgba(255,77,106,0.25)', color:'#c0392b', padding:'11px 14px', borderRadius:12, fontSize:13, fontWeight:600, marginBottom:16, lineHeight:1.4 }}>
-                ⚠️ {error}
+                <div style={{ marginBottom:6 }}>⚠️ {error}</div>
+                <button type="button" onClick={() => handleDemoLogin(role)}
+                  style={{ background:'#1a6fff', color:'#fff', border:'none', padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                  ⚡ Open in Demo / Offline Mode ({role === 'caretaker' ? 'Caretaker' : 'Patient'})
+                </button>
               </div>
             )}
 
@@ -343,7 +387,7 @@ export default function Login({ lang = 'en', onChangeLang }) {
               {loading ? '⏳ Please wait...' : isSignup ? `🚀 ${t('signup','Sign Up')}` : `🔐 ${t('login','Login')}`}
             </button>
 
-            <div style={{ display:'flex', alignItems:'center', gap:10, margin:'16px 0' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, margin:'14px 0' }}>
               <div style={{ flex:1, height:1, background:'rgba(26,111,255,0.12)' }} />
               <span style={{ fontSize:12, color:'#8ba0c0', fontWeight:600 }}>OR</span>
               <div style={{ flex:1, height:1, background:'rgba(26,111,255,0.12)' }} />
@@ -355,10 +399,27 @@ export default function Login({ lang = 'en', onChangeLang }) {
                 color:'#0d1b3e', fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:14,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-                boxShadow:'0 2px 8px rgba(0,0,0,0.06)', transition:'all 0.2s',
+                boxShadow:'0 2px 8px rgba(0,0,0,0.06)', transition:'all 0.2s', marginBottom:12
               }}>
               <span>🌐</span> {t('continueGoogle','Continue with Google')}
             </button>
+
+            {/* Quick 1-Click Demo Explore */}
+            <div style={{ marginTop:14, paddingTop:14, borderTop:'1px dashed rgba(26,111,255,0.15)', textAlign:'center' }}>
+              <div style={{ fontSize:11, color:'#64748b', fontWeight:600, marginBottom:8 }}>
+                🚀 Quick Preview / Offline Testing:
+              </div>
+              <div style={{ display:'flex', gap:8 }}>
+                <button type="button" onClick={() => handleDemoLogin('patient')}
+                  style={{ flex:1, padding:'9px 8px', borderRadius:10, border:'1.5px solid rgba(26,111,255,0.2)', background:'rgba(26,111,255,0.06)', color:'#1a6fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Plus Jakarta Sans',sans-serif", transition:'all 0.2s' }}>
+                  🧑‍⚕️ Patient Demo
+                </button>
+                <button type="button" onClick={() => handleDemoLogin('caretaker')}
+                  style={{ flex:1, padding:'9px 8px', borderRadius:10, border:'1.5px solid rgba(26,111,255,0.2)', background:'rgba(26,111,255,0.06)', color:'#1a6fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Plus Jakarta Sans',sans-serif", transition:'all 0.2s' }}>
+                  👨‍⚕️ Caretaker Demo
+                </button>
+              </div>
+            </div>
           </>
         )}
       </div>
