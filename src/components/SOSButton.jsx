@@ -26,6 +26,75 @@ export default function SOSButton({ user, userProfile }) {
   const [activeAlert, setActiveAlert] = useState(null)
   const [showModal, setShowModal] = useState(false)
 
+  // Dragging states and refs
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const dragStart = useRef({ x: 0, y: 0 })
+  const dragOffset = useRef({ x: 0, y: 0 })
+  const hasMoved = useRef(false)
+
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return // only left click
+    setIsDragging(true)
+    hasMoved.current = false
+    dragStart.current = { x: e.clientX, y: e.clientY }
+    dragOffset.current = { ...position }
+  }
+
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0]
+    setIsDragging(true)
+    hasMoved.current = false
+    dragStart.current = { x: touch.clientX, y: touch.clientY }
+    dragOffset.current = { ...position }
+  }
+
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handleMouseMove = (e) => {
+      const dx = e.clientX - dragStart.current.x
+      const dy = e.clientY - dragStart.current.y
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        hasMoved.current = true
+      }
+      setPosition({
+        x: dragOffset.current.x + dx,
+        y: dragOffset.current.y + dy
+      })
+    }
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length === 0) return
+      const touch = e.touches[0]
+      const dx = touch.clientX - dragStart.current.x
+      const dy = touch.clientY - dragStart.current.y
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        hasMoved.current = true
+      }
+      setPosition({
+        x: dragOffset.current.x + dx,
+        y: dragOffset.current.y + dy
+      })
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('touchmove', handleTouchMove)
+    window.addEventListener('touchend', handleMouseUp)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('touchmove', handleTouchMove)
+      window.removeEventListener('touchend', handleMouseUp)
+    }
+  }, [isDragging])
+
   // Check if there was an active SOS stored locally
   useEffect(() => {
     try {
@@ -115,10 +184,33 @@ export default function SOSButton({ user, userProfile }) {
 
   return (
     <>
-      {/* ── FLOATING RED SOS BUTTON ── */}
-      <div style={{ position: 'fixed', bottom: '90px', right: '20px', zIndex: 999 }}>
+      {/* ── FLOATING RED SOS BUTTON (DRAGGABLE) ── */}
+      <div 
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        style={{ 
+          position: 'fixed', 
+          bottom: '90px', 
+          right: '20px', 
+          zIndex: 999,
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          touchAction: 'none',
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
+      >
         <button
-          onClick={activeAlert ? () => setShowModal(true) : triggerSOS}
+          onClick={(e) => {
+            if (hasMoved.current) {
+              e.preventDefault();
+              e.stopPropagation();
+              return;
+            }
+            if (activeAlert) {
+              setShowModal(true);
+            } else {
+              triggerSOS();
+            }
+          }}
           disabled={loading}
           style={{
             width: '68px',
@@ -132,14 +224,15 @@ export default function SOSButton({ user, userProfile }) {
             fontSize: '18px',
             border: '4px solid #fff',
             boxShadow: '0 6px 20px rgba(217,4,41,0.55)',
-            cursor: loading ? 'wait' : 'pointer',
+            cursor: loading ? 'wait' : (isDragging ? 'grabbing' : 'pointer'),
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.3s',
+            transition: isDragging ? 'none' : 'all 0.3s',
             animation: activeAlert ? 'pulseSOSFast 1s infinite' : 'pulseSOS 2s infinite',
-            letterSpacing: 1
+            letterSpacing: 1,
+            userSelect: 'none'
           }}
         >
           {loading ? '...' : (

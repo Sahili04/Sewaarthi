@@ -1,57 +1,97 @@
 import { useState, useRef, useEffect } from 'react'
 
-// ── Medical & Pharmacological Knowledge Graph ──
+// ── Medical & Pharmacological Knowledge Graph (Comprehensive Multilingual) ──
 const CLINICAL_INSIGHTS = [
   {
+    category: 'cold_cough',
+    keywords: ['cold', 'cough', 'sore throat', 'khasi', 'khansi', 'jukam', 'zukam', 'khokla', 'sardi', 'gala', 'kaph', 'phlegm', 'खांसी', 'जुकाम', 'कफ', 'खोकला', 'सर्दी', 'गले में खराश', 'घसा'],
+    reply: {
+      en: "For cold, cough, and throat irritation:\n• 🍵 **Home Care:** Drink warm water, ginger-tulsi tea, and do warm salt-water gargles 2–3 times daily.\n• 💨 **Steam Inhalation:** Inhale steam once or twice a day to clear nasal congestion.\n• 💊 **Medications:** For dry cough, throat lozenges or honey-based syrup helps. For productive cough, consult your doctor for an expectorant. If fever exceeds 101°F or lasts >3 days, seek medical evaluation.",
+      hi: "सर्दी, खांसी और गले की खराश के लिए उपाय:\n• 🍵 **घरेलू देखभाल:** गुनगुना पानी पिएं, अदरक-तुलसी की चाय लें और दिन में 2-3 बार गुनगुने नमक के पानी से गरारे करें।\n• 💨 **भाप लें:** बंद नाक और कफ से राहत के लिए दिन में एक-दो बार सादे पानी की भाप लें।\n• 💊 **दवाइयाँ:** सूखी खांसी में कफ सिरप या शहद-अदरक लाभ देता है। यदि बुखार 3 दिन से अधिक रहे या सांस लेने में तकलीफ हो, तो तुरंत डॉक्टर से परामर्श लें।",
+      mr: "सर्दी, खोकला आणि घसा दुखण्यावर उपाय:\n• 🍵 **घरगुती काळजी:** कोमट पाणी प्या, आलं-तुळशीचा काढा घ्या आणि दिवसातून २-३ वेळा कोमट मिठाच्या पाण्याच्या गुळण्या करा.\n• 💨 **वाफ घ्या:** नाक मोकळे होण्यासाठी आणि कफ विरघळण्यासाठी दिवसातून एकदा-दोनदा वाफ घ्या.\n• 💊 **औषधे:** कोरड्या खोकल्यासाठी मध व आलं उपयुक्त ठरते. कफ जास्त असल्यास किंवा ३ दिवसांपेक्षा जास्त ताप राहिल्यास डॉक्टरांचा सल्ला घ्या."
+    }
+  },
+  {
+    category: 'fever',
+    keywords: ['fever', 'bukhar', 'taap', 'tap', 'temperature', 'chills', 'thandi', 'dolo', 'paracetamol', 'crocin', 'बुखार', 'ताप', 'कपकपी', 'अंग गरम'],
+    reply: {
+      en: "Managing fever and elevated body temperature:\n• 💊 **Medication:** Paracetamol (Dolo 650 / Crocin) can be taken after meals. Keep at least a 6-hour gap between doses (maximum 3,000–4,000 mg in 24 hours).\n• 💧 **Hydration & Rest:** Drink plenty of fluids (water, ORS, soups) and get complete bed rest.\n• 🧊 **Cool Sponging:** If temperature rises above 102°F, apply a damp lukewarm cloth on forehead and arms.\n• ⚠️ **Warning:** If fever exceeds 103°F, lasts over 3 days, or is accompanied by rash or stiff neck, visit a doctor immediately.",
+      hi: "बुखार और शरीर के तापमान पर नियंत्रण:\n• 💊 **दवाई:** पैरासिटामोल (डोलो 650 / क्रोसिन) भोजन के बाद लें। दो खुराकों में कम से कम 6 घंटे का अंतर रखें (24 घंटे में अधिकतम 4,000 mg)।\n• 💧 **तरल पदार्थ व आराम:** भरपूर पानी, ओआरएस और सूप पिएं तथा पर्याप्त आराम करें।\n• 🧊 **गीली पट्टी:** यदि बुखार 102°F से अधिक हो, तो माथे पर सामान्य पानी की पट्टी रखें।\n• ⚠️ **चेतावनी:** यदि बुखार 3 दिन से अधिक रहे या अत्यधिक कमजोरी महसूस हो, तो तुरंत डॉक्टर को दिखाएं।",
+      mr: "ताप आणि अंगदुखीचे व्यवस्थापन:\n• 💊 **औषध:** पॅरासिटामॉल (डोलो ६५० / क्रोसिन) जेवणानंतर घ्यावे. दोन डोसमधील अंतर किमान ६ तास असावे (२४ तासांत जास्तीत जास्त ४,००० mg).\n• 💧 **पाणी आणि विश्रांती:** भरपूर पाणी, ओआरएस, सूप प्या आणि पूर्ण विश्रांती घ्या.\n• 🧊 **ओल्या कापडाच्या पट्ट्या:** ताप १०२°F पेक्षा जास्त असल्यास कपाळावर कोमट पाण्याच्या पट्ट्या ठेवा.\n• ⚠️ **महत्त्वाची सूचना:** ताप ३ दिवसांपेक्षा जास्त राहिल्यास किंवा तीव्र अशक्तपणा असल्यास डॉक्टरांना भेटा."
+    }
+  },
+  {
+    category: 'headache',
+    keywords: ['headache', 'head ache', 'sir dard', 'sar dard', 'doke dukhi', 'dokedukhi', 'migraine', 'adhasisi', 'सिरदर्द', 'सर दर्द', 'डोकेदुखी', 'मायग्रेन', 'डोके'],
+    reply: {
+      en: "Relief for headaches and mental strain:\n• 💧 **Hydrate:** Dehydration is a leading cause of headaches; drink 1–2 glasses of water immediately.\n• 🧘 **Rest & Darkness:** Rest in a quiet, dimly lit room and avoid mobile/TV screens for 30 minutes.\n• ☕ **Gentle Relief:** Mild tea or a gentle forehead massage with balm can ease tension headaches.\n• ⚠️ If headache is sudden, unusually severe, or accompanied by blurred vision or vomiting, seek immediate medical attention.",
+      hi: "सिरदर्द और तनाव से राहत के उपाय:\n• 💧 **पानी पिएं:** पानी की कमी सिरदर्द का मुख्य कारण हो सकती है; तुरंत 1-2 गिलास पानी पिएं।\n• 🧘 **शांत वातावरण:** शांत और मंद रोशनी वाले कमरे में विश्राम करें, मोबाइल और स्क्रीन से दूरी बनाएं।\n• ☕ **हल्की सिकाई:** अदरक की हल्की चाय या माथे की हल्की मालिश से आराम मिलता है।\n• ⚠️ यदि सिरदर्द अचानक बहुत तेज हो या उल्टी व चक्कर के साथ हो, तो तुरंत डॉक्टर से संपर्क करें।",
+      mr: "डोकेदुखी आणि मानसिक तणावावर आराम:\n• 💧 **पाणी प्या:** शरीरातील पाण्याच्या कमतरतेमुळे डोकेदुखी होऊ शकते; लगेच १-२ ग्लास पाणी प्या.\n• 🧘 **शांतता आणि विश्रांती:** शांत, अंधाऱ्या खोलीत थोडा वेळ डोळे मिटून झोपा. मोबाईल किंवा टीव्ही स्क्रीन पाहणे टाळा.\n• ☕ **घरगुती उपाय:** आल्याचा चहा किंवा कपाळाला हलका मसाज केल्याने आराम मिळतो.\n• ⚠️ डोकेदुखी अचानक खूप तीव्र झाल्यास किंवा उलट्या-चक्कर येत असल्यास ताबडतोब डॉक्टरांचा सल्ला घ्या."
+    }
+  },
+  {
+    category: 'acidity_gas',
+    keywords: ['acidity', 'gas', 'acid', 'heartburn', 'pantocid', 'pantoprazole', 'omeprazole', 'gelusil', 'digene', 'chhati me jalan', 'pitta', 'pet phulna', 'एसिडिटी', 'गैस', 'जलन', 'पित्त', 'अपचन'],
+    reply: {
+      en: "Managing Acidity, Gas, and Heartburn:\n• 💊 **Timing:** Antacids / PPIs (Pantoprazole, Omeprazole) work best when taken 30 minutes before breakfast on an empty stomach.\n• 🥛 **Natural Relief:** Sip cold milk, coconut water, or chew fennel seeds (saunf) after meals.\n• 🚫 **Avoid:** Limit oily, deeply fried, and overly spicy foods. Do not lie down flat immediately after eating — wait at least 2 hours.\n• 💧 Drink plenty of water throughout the day.",
+      hi: "एसिडिटी, गैस और सीने की जलन से बचाव:\n• 💊 **दवा का समय:** गैस की दवा (पैंटोप्राजोल, ओमेप्राजोल) सुबह नाश्ते से 30 मिनट पहले खाली पेट लें।\n• 🥛 **प्राकृतिक उपाय:** ठंडा दूध, नारियल पानी या भोजन के बाद सौंफ चबाने से तुरंत राहत मिलती है।\n• 🚫 **परहेज:** तला-भुना, अत्यधिक मिर्च-मसालेदार खाना कम करें। भोजन के तुरंत बाद न लेटें, कम से कम 2 घंटे का अंतर रखें।\n• 💧 दिनभर घूंट-घूंट करके पर्याप्त पानी पिएं।",
+      mr: "अ‍ॅसिडिटी, गॅस आणि छातीतील जळजळीवर उपाय:\n• 💊 **औषधांची वेळ:** अ‍ॅसिडिटीच्या गोळ्या (पँटोप्राझोल, ओमेप्राझोल) सकाळी नाश्त्यापूर्वी ३० मिनिटे रिकाम्या पोटी घ्या.\n• 🥛 **नैसर्गिक उपाय:** थंड दूध, नारळ पाणी प्या किंवा जेवणानंतर बडीशेप खाल्ल्याने आराम मिळतो.\n• 🚫 **काय टाळावे:** तेलकट, अति तिखट आणि जंक फूड टाळा. जेवल्या जेवल्या लगेच झोपू नका, किमान २ तास थांबा.\n• 💧 दिवसभरात पुरेसे पाणी पिणे आवश्यक आहे."
+    }
+  },
+  {
+    category: 'stomach_diarrhea',
+    keywords: ['stomach pain', 'loose motion', 'diarrhea', 'vomit', 'vomiting', 'pet dard', 'dast', 'pothdukhi', 'julab', 'ulti', 'ors', 'पेट दर्द', 'दस्त', 'उल्टी', 'पोटदुखी', 'जुलाब'],
+    reply: {
+      en: "Stomach upset, Loose Motions, and Vomiting care:\n• 💧 **Hydration Priority (Crucial):** Drink ORS (Oral Rehydration Solution), coconut water, or lemon water with a pinch of salt and sugar to prevent dehydration.\n• 🥣 **BRAT Diet:** Eat light, easily digestible food: khichdi, curd-rice, bananas, and toast. Avoid milk and spicy curries.\n• 💊 **Medications:** Do not take anti-diarrheal pills without doctor consultation if fever or blood in stool is present.\n• ⚠️ Seek urgent medical help if urine output drops or vomiting prevents fluid retention.",
+      hi: "पेट दर्द, दस्त और उल्टी की स्थिति में देखभाल:\n• 💧 **ओआरएस (ORS) सबसे जरूरी:** पानी की कमी से बचने के लिए ओआरएस का घोल, नारियल पानी या नमक-चीनी का पानी बार-बार पिएं।\n• 🥣 **हल्का आहार:** मूंग दाल की खिचड़ी, दही-चावल, केला और उबले आलू खाएं। दूध और भारी भोजन से बचें।\n• 💊 **दवाई:** बिना डॉक्टर की सलाह के दस्त रोकने की दवाएं न लें, विशेषकर यदि बुखार भी हो।\n• ⚠️ यदि पेशाब कम आए, कमजोरी अत्यधिक हो या लगातार उल्टी हो, तो तुरंत अस्पताल जाएं।",
+      mr: "पोटदुखी, जुलाब आणि उलट्यांवरील उपचार:\n• 💧 **ओआरएस (ORS) अत्यंत महत्त्वाचे:** डिहायड्रेशन टाळण्यासाठी ओआरएसचे पाणी, नारळपाणी किंवा मीठ-साखरेचे पाणी वारंवार प्या.\n• 🥣 **हलका आहार:** मऊ मुगाची खिचडी, दही-भात, केळी यांसारखे पचायला हलके अन्न खा. तेलकट आणि दुग्धजन्य पदार्थ टाळा.\n• 💊 **औषध:** डॉक्टरांच्या सल्ल्याशिवाय जुलाब थांबवण्याच्या तीव्र गोळ्या घेऊ नका.\n• ⚠️ तीव्र अशक्तपणा, लघवी कमी होणे किंवा सतत उलट्या होत असल्यास ताबडतोब डॉक्टरांकडे जा."
+    }
+  },
+  {
     category: 'diabetes',
-    keywords: ['diabetes', 'sugar', 'metformin', 'glycomet', 'glimepiride', 'insulin', 'madhumeh', 'hba1c'],
-    reply: "Diabetes medications (like Metformin) are best taken with or immediately after meals to reduce stomach discomfort. Always keep a fast-acting carb (like glucose, candy, or fruit juice) handy in case blood sugar drops below 70 mg/dL (hypoglycemia symptoms: shakiness, sweating, sudden dizziness)."
+    keywords: ['diabetes', 'sugar', 'metformin', 'glycomet', 'glimepiride', 'insulin', 'madhumeh', 'hba1c', 'मधुमेह', 'डायबिटीज', 'साखर', 'शुगर', 'फास्टिंग'],
+    reply: {
+      en: "Diabetes & Blood Sugar Management:\n• 💊 **Medication:** Take Metformin with or right after meals to avoid gastric distress. Never skip doses without doctor guidance.\n• 🥗 **Dietary Advice:** Incorporate whole grains (oats, millets/jowar), green vegetables, and lentils. Limit white rice, sweets, potatoes, and sugary juices.\n• ⚠️ **Hypoglycemia (Low Sugar <70 mg/dL):** If you feel sudden sweating, trembling, or dizziness, immediately consume 3 spoons of sugar, fruit juice, or candy (15-15 Rule).\n• 🏃 Engage in 30 minutes of brisk walking daily.",
+      hi: "मधुमेह (शुगर) नियंत्रण और आहार:\n• 💊 **दवाइयाँ:** मेटफॉर्मिन भोजन के साथ या तुरंत बाद लें। डॉक्टर की सलाह के बिना खुराक कभी न छोड़ें।\n• 🥗 **आहार:** साबुत अनाज (ज्वार, बाजरा, ओट्स), हरी सब्जियां और दालें खाएं। चीनी, सफेद चावल और आलू सीमित करें।\n• ⚠️ **लो शुगर (हाइपोग्लाइसीमिया <70 mg/dL):** यदि अचानक पसीना, कंपन या चक्कर आए, तो तुरंत 3 चम्मच चीनी, ग्लूकोज या फलों का रस लें।\n• 🏃 रोज़ाना 30 मिनट टहलने की आदत डालें।",
+      mr: "मधुमेह (डायबिटीज) आणि रक्तातील साखरेचे नियंत्रण:\n• 💊 **औषधे:** मेटफॉर्मिन जेवणासोबत किंवा जेवणानंतर लगेच घ्यावे. वेळेवर औषध घेणे अत्यंत महत्त्वाचे आहे.\n• 🥗 **आहार:** आहारात ज्वारी, नाचणी, हिरव्या पालेभाज्या आणि कडधान्यांचा समावेश करा. साखर, गोड पदार्थ व मैद्याचे पदार्थ टाळा.\n• ⚠️ **साखर अचानक कमी झाल्यास (<७० mg/dL):** थरकाप, घाम किंवा चक्कर आल्यास ताबडतोब ३ चमचे साखर, गूळ किंवा फळांचा रस प्या.\n• 🏃 दररोज किमान ३० मिनिटे चालण्याचा व्यायाम करा."
+    }
   },
   {
     category: 'hypertension',
-    keywords: ['bp', 'blood pressure', 'hypertension', 'amlodipine', 'telmisartan', 'losartan', 'atenolol', 'high bp'],
-    reply: "Blood pressure medicines should be taken at the exact same hour every day for consistent arterial pressure control. Avoid skipping doses even if your blood pressure reading feels normal. Limit sodium/salt intake and stay hydrated."
+    keywords: ['bp', 'blood pressure', 'hypertension', 'amlodipine', 'telmisartan', 'losartan', 'atenolol', 'high bp', 'रक्तदाब', 'ब्लड प्रेशर', 'बीपी', 'उच्च रक्तदाब'],
+    reply: {
+      en: "High Blood Pressure (Hypertension) Guidelines:\n• ⏰ **Consistency:** Take your BP medication at the exact same hour every day. Do not stop medicines even if your BP readings appear normal.\n• 🧂 **Sodium/Salt:** Restrict table salt to less than 1 teaspoon (5g) per day. Avoid packaged snacks, papad, and pickles.\n• 🥦 **DASH Diet:** Eat foods rich in potassium: bananas, spinach, coconut water, and citrus fruits.\n• 🧘 Manage stress with deep breathing and regular 30-minute walks.",
+      hi: "हाई ब्लड प्रेशर (उच्च रक्तचाप) के लिए दिशानिर्देश:\n• ⏰ **नियमितता:** बीपी की दवा हर दिन ठीक उसी समय लें। बीपी सामान्य होने पर भी दवा कभी बंद न करें।\n• 🧂 **नमक पर नियंत्रण:** दिनभर में 1 छोटे चम्मच (5 ग्राम) से कम नमक का उपयोग करें। अचार, पापड़ और नमकीन से बचें।\n• 🥦 **पोषक आहार:** पोटैशियम युक्त आहार जैसे केला, पालक, नारियल पानी और ताजे फल खाएं।\n• 🧘 गहरी सांस लेने का अभ्यास करें और रोज़ 30 मिनट टहलें।",
+      mr: "उच्च रक्तदाब (बीपी) नियंत्रणात ठेवण्याचे नियम:\n• ⏰ **वेळेचे पालन:** बीपीचे औषध दररोज ठरलेल्या वेळीच घ्या. रक्तदाब सामान्य आला तरी डॉक्टरांना विचारल्याशिवाय औषध बंद करू नका.\n• 🧂 **मीठ कमी करा:** दिवसाला १ चमच्यापेक्षा (५ ग्रॅम) कमी मीठ वापरा. लोणचे, पापड व खारट पदार्थ टाळा.\n• 🥦 **पौष्टिक आहार:** केळी, पालक, नारळपाणी आणि हिरव्या भाज्या खा.\n• 🧘 तणावमुक्त राहा, ध्यान करा आणि दररोज ३० मिनिटे फिरायला जा."
+    }
   },
   {
-    category: 'thyroid',
-    keywords: ['thyroid', 'thyronorm', 'eltroxin', 'levothyroxine', 'hypothyroid'],
-    reply: "Thyroid medication (Levothyroxine / Thyronorm) MUST be taken on an empty stomach first thing in the morning with a full glass of plain water. Wait at least 45–60 minutes before having tea, coffee, milk, or breakfast for proper absorption."
+    category: 'joint_pain',
+    keywords: ['joint pain', 'knee pain', 'back pain', 'arthritis', 'sandhe dukhi', 'jod dard', 'kamar dard', 'uric acid', 'जोड़ों का दर्द', 'कमर दर्द', 'घुटनों का दर्द', 'सांधेदुखी', 'पाठीचे दुखणे'],
+    reply: {
+      en: "Joint, Knee, and Back Pain Relief:\n• 🧊 **Hot/Cold Compress:** Apply a warm towel/heating pad for muscle stiffness, or an ice pack for acute swelling.\n• 🏃 **Low-Impact Movement:** Gentle walking, swimming, and knee-strengthening exercises preserve joint mobility.\n• 🥛 **Bone Strength:** Ensure adequate Calcium and Vitamin D3 intake (sunlight exposure, milk, paneer).\n• ⚠️ Avoid lifting heavy weights directly and avoid sitting on the floor if knee pain is severe.",
+      hi: "जोड़ों, घुटनों और कमर दर्द से राहत:\n• 🧊 **गर्म/ठंडी सिकाई:** अकड़न में गर्म पानी की थैली से सिकाई करें, और सूजन में बर्फ की सिकाई लाभ देती है।\n• 🏃 **हल्का व्यायाम:** घुटनों के हल्के व्यायाम और सुबह की सैर से जोड़ों का लचीलापन बना रहता है।\n• 🥛 **हड्डियों की मजबूती:** कैल्शियम और विटामिन D3 युक्त आहार (धूप, दूध, तिल) लें।\n• ⚠️ भारी वजन उठाने से बचें और घुटने में तेज दर्द हो तो नीचे बैठने से परहेज करें।",
+      mr: "सांधेदुखी, गुडघेदुखी आणि कंबरदुखीवर उपाय:\n• 🧊 **शेक देणे:** सांधे आखडले असल्यास गरम पाण्याचा शेक द्या, आणि सूज असल्यास बर्फाने शेका.\n• 🏃 **हलका व्यायाम:** दररोज सकाळी चालणे आणि गुडघ्यांचे साधे व्यायाम सांधे लवचिक ठेवण्यास मदत करतात.\n• 🥛 **हाडांची मजबुती:** कोवळे ऊन, दूध, नाचणी यातून कॅल्शियम आणि व्हिटॅमिन D3 मिळवा.\n• ⚠️ जास्त वजन उचलणे टाळा आणि गुडघेदुखी जास्त असल्यास मांडी घालून बसणे टाळा."
+    }
   },
   {
-    category: 'gastric',
-    keywords: ['acidity', 'gas', 'pantocid', 'pantoprazole', 'omeprazole', 'rabeprazole', 'gelusil', 'digene', 'pet dard'],
-    reply: "Antacids and Proton Pump Inhibitors (Pantoprazole, Omeprazole) work best when taken 30 minutes before your first meal of the day (empty stomach). If you take iron or calcium supplements, space them at least 2 hours apart from antacids."
+    category: 'sleep_stress',
+    keywords: ['sleep', 'insomnia', 'stress', 'tension', 'anxiety', 'neend', 'thakan', 'zhop', 'tanav', 'ashaktpana', 'नींद', 'तनाव', 'थकान', 'झोप', 'अशक्तपणा', 'चिंता'],
+    reply: {
+      en: "Restful Sleep & Stress Reduction:\n• 📵 **Digital Curfew:** Turn off smartphones and screens at least 45 minutes before bedtime.\n• 🥛 **Bedtime Routine:** Drink a cup of warm turmeric milk or chamomile tea, and keep your bedroom cool and dark.\n• 🧘 **Breathing:** Practice 4-7-8 deep breathing to calm the nervous system before sleeping.\n• ⏰ Maintain consistent sleep and wake-up times every day.",
+      hi: "अच्छी नींद और मानसिक शांति के उपाय:\n• 📵 **स्क्रीन से दूरी:** सोने से 45 मिनट पहले मोबाइल और टीवी बंद कर दें।\n• 🥛 **रात की दिनचर्या:** सोने से पहले हल्का गुनगुना हल्दी वाला दूध पिएं और कमरे में शांति व अंधेरा रखें।\n• 🧘 **प्राणायाम:** सोने से पहले 5 मिनट गहरी सांस लेने का अभ्यास करें जिससे मन शांत होता है।\n• ⏰ रोज़ाना एक ही समय पर सोने और जागने का नियम बनाएं।",
+      mr: "शांत झोप आणि तणावमुक्तीसाठी टिप्स:\n• 📵 **स्क्रीन बंद करा:** झोपण्यापूर्वी किमान ४५ मिनिटे मोबाईल व टीव्ही पाहणे टाळा.\n• 🥛 **रात्रीची सवय:** झोपण्यापूर्वी कोमट हळदीचे दूध प्या आणि शांत वातावरणात विश्रांती घ्या.\n• 🧘 **दीर्घ श्वसन:** झोपण्यापूर्वी ५ मिनिटे दीर्घ श्वास घेतल्यास मन आणि मेंदू शांत होतो.\n• ⏰ दररोज झोपण्याची आणि उठण्याची एकच वेळ निश्चित ठेवा."
+    }
   },
   {
-    category: 'antibiotic',
-    keywords: ['antibiotic', 'amoxicillin', 'azithromycin', 'augmentin', 'cefixime', 'infection'],
-    reply: "Always complete the full course of antibiotics prescribed by your doctor, even if you feel completely better after 2 days. Stopping early can allow bacteria to develop resistance and cause reinfection. Take with food to avoid nausea."
-  },
-  {
-    category: 'pain',
-    keywords: ['paracetamol', 'dolo', 'crocin', 'calpol', 'fever', 'headache', 'pain', 'bukhar', 'dard', 'combiflam', 'ibuprofen'],
-    reply: "Paracetamol (Dolo 650 / Crocin) is safe for fever and body aches. Never exceed 4,000 mg in 24 hours to protect your liver. Take pain relievers with food or after meals to protect your stomach lining."
-  },
-  {
-    category: 'cardiac',
-    keywords: ['heart', 'cholesterol', 'atorvastatin', 'rosuvastatin', 'aspirin', 'ecospirin', 'statin', 'chest'],
-    reply: "Statins (Atorvastatin / Rosuvastatin) are most effective when taken at bedtime, as your liver synthesizes the most cholesterol overnight. Blood thinners like Ecosprin should always be taken after meals to prevent gastric bleeding."
-  },
-  {
-    category: 'vitamins',
-    keywords: ['vitamin', 'd3', 'b12', 'calcium', 'shelcal', 'zinc', 'multivitamin', 'becosules'],
-    reply: "Vitamin D3 is fat-soluble and absorbs best when taken after a meal containing healthy fats (milk, curd, nuts). Calcium and Iron supplements should NEVER be taken at the exact same time — space them by at least 2 hours for full absorption."
-  },
-  {
-    category: 'emergency',
-    keywords: ['chest pain', 'heart attack', 'breathing problem', 'cant breathe', 'chhati dard', 'unconscious', 'faint', 'severe bleeding'],
-    reply: "⚠️ URGENT MEDICAL ADVICE: If you or someone is experiencing sudden crushing chest pain, radiating pain down the arm, severe shortness of breath, or loss of consciousness, call emergency services immediately or press the red SOS button on your dashboard."
-  },
-  {
-    category: 'missed_dose',
-    keywords: ['miss', 'forgot', 'skip', 'dawa bhul', 'dawai bhul'],
-    reply: "If you forgot to take a dose, take it as soon as you remember. However, if it's already near your next scheduled time, skip the missed dose and resume your regular schedule. NEVER double up doses to compensate."
-  },
+    category: 'diet_weight',
+    keywords: ['diet', 'weight loss', 'vajan kam', 'vajan ghatana', 'nutrition', 'food', 'aahar', 'poshan', 'वजन घटाना', 'डाइट', 'आहार', 'वजन कमी', 'पोषण'],
+    reply: {
+      en: "Healthy Weight & Nutrition Strategy:\n• 🥗 **Plate Method:** Fill half your plate with vegetables/salad, one quarter with protein (dal, sprouts, paneer, eggs), and one quarter with complex carbs (millets, oats, brown rice).\n• 💧 **Water Timing:** Drink a full glass of water 20 minutes before meals to naturally moderate portion size.\n• 🚫 **Cut Sugar:** Eliminate refined sugar, sodas, and packaged bakery products.\n• 🚶 Walk at least 7,000–10,000 steps daily for sustainable metabolism.",
+      hi: "स्वस्थ वजन और पोषण युक्त आहार:\n• 🥗 **संतुलित थाली:** आधी थाली हरी सब्जियों और सलाद से, एक चौथाई प्रोटीन (दाल, स्प्राउट्स, पनीर) और एक चौथाई अनाज (ज्वार, बाजरा) से भरें।\n• 💧 **पानी का नियम:** भोजन से 20 मिनट पहले 1 गिलास पानी पिएं जिससे पाचन सुधरता है।\n• 🚫 **मीठा बंद:** चीनी, कोल्ड ड्रिंक्स और मैदे से बनी चीजों का सेवन बंद या बहुत कम करें।\n• 🚶 रोज़ाना 30-45 मिनट तेज गति से टहलें।",
+      mr: "वजन नियंत्रण आणि संतुलित आहार:\n• 🥗 **ताटाचे नियोजन:** ताटातील अर्धा भाग पालेभाज्या व सॅलड, पाव भाग प्रथिने (डाळी, मोड आलेली कडधान्ये, अंडी) आणि पाव भाग भाकरी असावा.\n• 💧 **पाण्याची वेळ:** जेवणापूर्वी २० मिनिटे एक ग्लास पाणी प्या.\n• 🚫 **साखर टाळा:** साखर, गोड पेये, मैदा आणि बेकरी उत्पादने आहारातून कमी करा.\n• 🚶 दररोज किमान ७,००० ते १०,००० पावले चालण्याचा नियम ठेवा."
+    }
+  }
 ]
 
 // ── Text Formatter ──
@@ -63,7 +103,7 @@ function FormattedText({ text }) {
       {lines.map((line, li) => {
         const parts = line.split(/(\*\*.*?\*\*)/g)
         return (
-          <div key={li} style={{ minHeight: line.trim() === '' ? 8 : undefined, marginBottom: 3 }}>
+          <div key={li} style={{ minHeight: line.trim() === '' ? 8 : undefined, marginBottom: 4 }}>
             {parts.map((part, pi) => {
               if (part.startsWith('**') && part.endsWith('**')) {
                 return <strong key={pi} style={{ color: 'inherit', fontWeight: 700 }}>{part.slice(2, -2)}</strong>
@@ -80,18 +120,18 @@ function FormattedText({ text }) {
 // ── Helpers ──
 function parseWaterIntake(text) {
   const lower = text.toLowerCase()
-  const glassMatch = lower.match(/(\d+)\s*(?:glass|glasses)/)
+  const glassMatch = lower.match(/(\d+)\s*(?:glass|glasses|गिलास|ग्लास)/)
   if (glassMatch) return parseInt(glassMatch[1], 10) * 250
-  if (lower.includes('glass of water') || lower.includes('one glass') || lower.includes('1 glass') || lower.includes('ek glass')) return 250
-  if (lower.includes('two glasses') || lower.includes('2 glasses') || lower.includes('do glass')) return 500
+  if (lower.includes('glass of water') || lower.includes('one glass') || lower.includes('1 glass') || lower.includes('ek glass') || lower.includes('एक ग्लास') || lower.includes('एक गिलास')) return 250
+  if (lower.includes('two glasses') || lower.includes('2 glasses') || lower.includes('do glass') || lower.includes('दोन ग्लास') || lower.includes('दो गिलास')) return 500
 
-  const mlMatch = lower.match(/(\d+)\s*(?:ml|milliliter|millilitre)/)
+  const mlMatch = lower.match(/(\d+)\s*(?:ml|milliliter|millilitre|मिली|मिलीलीटर)/)
   if (mlMatch) return parseInt(mlMatch[1], 10)
 
-  const literMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:l|liter|litre|liters|litres)/)
+  const literMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:l|liter|litre|liters|litres|लीटर|लिटर)/)
   if (literMatch) return Math.round(parseFloat(literMatch[1]) * 1000)
 
-  if (lower.includes('water') || lower.includes('pani') || lower.includes('hydrat')) {
+  if (lower.includes('water') || lower.includes('pani') || lower.includes('paani') || lower.includes('पानी') || lower.includes('पाणी') || lower.includes('hydrat')) {
     const numMatch = lower.match(/(\d+)/)
     if (numMatch) {
       const val = parseInt(numMatch[1], 10)
@@ -104,34 +144,37 @@ function parseWaterIntake(text) {
 
 function parseMedicineSchedule(text) {
   const lower = text.toLowerCase()
-  if (!lower.includes('med') && !lower.includes('tablet') && !lower.includes('pill') && !lower.includes('dose') && !lower.includes('dawai') && !lower.includes('goli') && !lower.includes('remind') && !lower.includes('schedule') && !lower.includes('take') && !lower.includes('add') && !lower.includes('start')) {
-    return null
-  }
+  const hasMedTrigger = lower.includes('med') || lower.includes('tablet') || lower.includes('pill') || lower.includes('dose') ||
+    lower.includes('dawai') || lower.includes('goli') || lower.includes('remind') || lower.includes('schedule') ||
+    lower.includes('take') || lower.includes('add') || lower.includes('start') || lower.includes('दवाई') ||
+    lower.includes('औषध') || lower.includes('गोळी') || lower.includes('जोड़ा') || lower.includes('जोडा')
+
+  if (!hasMedTrigger) return null
 
   let name = ''
   const namePatterns = [
-    /(?:add|schedule|take|prescribe|remind me to take|med|medicine|tablet|goli|dawai)\s+([a-zA-Z0-9\s]{2,25}?)(?:\s+\d+mg|\s+\d+ml|\s+tablet|\s+morning|\s+afternoon|\s+night|\s+evening|\s+before|\s+after|$)/i,
+    /(?:add|schedule|take|prescribe|remind me to take|med|medicine|tablet|goli|dawai|दवाई|औषध|गोळी)\s+([a-zA-Z0-9\u0900-\u097F\s]{2,25}?)(?:\s+\d+mg|\s+\d+ml|\s+tablet|\s+morning|\s+afternoon|\s+night|\s+evening|\s+before|\s+after|$)/i,
     /([A-Z][a-zA-Z0-9]+)/
   ]
   for (const p of namePatterns) {
     const m = text.match(p)
     if (m && m[1]) {
-      const cand = m[1].replace(/^(medicine|tablet|pill|dawai|goli|to|the|my|a|an)\s+/i, '').trim()
-      if (cand && cand.length >= 3 && !['water','glass','schedule','remind','routine','pani'].includes(cand.toLowerCase())) {
+      const cand = m[1].replace(/^(medicine|tablet|pill|dawai|goli|to|the|my|a|an|दवाई|औषध|गोळी)\s+/i, '').trim()
+      if (cand && cand.length >= 3 && !['water','glass','schedule','remind','routine','pani','paani','पानी','पाणी'].includes(cand.toLowerCase())) {
         name = cand
         break
       }
     }
   }
   if (!name) {
-    const words = text.split(/\s+/).filter(w => !['add','schedule','medicine','tablet','pill','water','take','remind','me','to','in','the','at','morning','night','evening','afternoon','after','before','food','with','pani','dawai','goli'].includes(w.toLowerCase()))
+    const words = text.split(/\s+/).filter(w => !['add','schedule','medicine','tablet','pill','water','take','remind','me','to','in','the','at','morning','night','evening','afternoon','after','before','food','with','pani','dawai','goli','दवाई','औषध'].includes(w.toLowerCase()))
     if (words.length > 0) name = words[0]
   }
 
   if (!name || name.length < 2) return null
 
   let dosage = '1 tablet'
-  const doseMatch = text.match(/(\d+\s*(?:mg|ml|mcg|iu|tablet|tablets|capsule|capsules|pill|pills|drops))/i)
+  const doseMatch = text.match(/(\d+\s*(?:mg|ml|mcg|iu|tablet|tablets|capsule|capsules|pill|pills|drops|एमजी|मिली|गोली|गोळी))/i)
   if (doseMatch) dosage = doseMatch[1]
   else if (text.match(/(\d+)\s*(?:tab|cap)/i)) dosage = text.match(/(\d+)\s*(?:tab|cap)/i)[1] + ' tablet'
 
@@ -142,20 +185,20 @@ function parseMedicineSchedule(text) {
     night:     { enabled: false, time: '21:00' }
   }
 
-  if (lower.includes('morning') || lower.includes('subah') || lower.includes('breakfast')) {
+  if (lower.includes('morning') || lower.includes('subah') || lower.includes('breakfast') || lower.includes('सुबह') || lower.includes('सकाळी')) {
     slots.morning.enabled = true
     times.push('08:00')
   }
-  if (lower.includes('afternoon') || lower.includes('dopahar') || lower.includes('lunch')) {
+  if (lower.includes('afternoon') || lower.includes('dopahar') || lower.includes('lunch') || lower.includes('दोपहर') || lower.includes('दुपारी')) {
     slots.afternoon.enabled = true
     times.push('13:00')
   }
-  if (lower.includes('night') || lower.includes('evening') || lower.includes('dinner') || lower.includes('raat') || lower.includes('soote')) {
+  if (lower.includes('night') || lower.includes('evening') || lower.includes('dinner') || lower.includes('raat') || lower.includes('soote') || lower.includes('रात') || lower.includes('रात्री') || lower.includes('संध्याकाळी')) {
     slots.night.enabled = true
     times.push('21:00')
   }
 
-  const timeExplicit = text.match(/(?:at|@)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i)
+  const timeExplicit = text.match(/(?:at|@|बजे|वाजता)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i)
   if (timeExplicit) {
     let hh = parseInt(timeExplicit[1], 10)
     const mm = timeExplicit[2] ? timeExplicit[2] : '00'
@@ -175,8 +218,8 @@ function parseMedicineSchedule(text) {
   }
 
   let foodTiming = 'after'
-  if (lower.includes('before food') || lower.includes('before meal') || lower.includes('empty stomach') || lower.includes('bhukhe pet')) foodTiming = 'before'
-  if (lower.includes('with food') || lower.includes('with meal') || lower.includes('khate waqt')) foodTiming = 'with'
+  if (lower.includes('before food') || lower.includes('before meal') || lower.includes('empty stomach') || lower.includes('bhukhe pet') || lower.includes('खाने से पहले') || lower.includes('जेवणापूर्वी')) foodTiming = 'before'
+  if (lower.includes('with food') || lower.includes('with meal') || lower.includes('khate waqt') || lower.includes('खाने के साथ') || lower.includes('जेवणासोबत')) foodTiming = 'with'
 
   return {
     name: name.charAt(0).toUpperCase() + name.slice(1),
@@ -191,6 +234,82 @@ function parseMedicineSchedule(text) {
   }
 }
 
+// ── Smart Dynamic AI Responder (Handles ANY Question) ──
+async function generateSmartAIResponse(userQuery, activeLang, userContext) {
+  // 1. Check if user configured Gemini API Key in Vercel / environment
+  const apiKey = import.meta.env?.VITE_GEMINI_API_KEY
+  if (apiKey) {
+    try {
+      const systemPrompt = `You are Sewaarthi AI, a warm, caring, expert healthcare companion for patients and seniors in India.
+Target language for response: ${activeLang === 'hi' ? 'Hindi (हिंदी script)' : activeLang === 'mr' ? 'Marathi (मराठी script)' : 'English'}.
+User Context: Scheduled Medicines count: ${userContext.totalMeds}, Water intake today: ${userContext.waterIntake}ml of ${userContext.waterGoal}ml goal.
+
+Instructions:
+1. Provide accurate, practical, empathetic medical advice.
+2. Structure with bullet points (**bold keys**) so it is easy to read.
+3. If giving medication precautions, mention food timing, hydration, and when to see a doctor.
+4. Always respond completely in ${activeLang === 'hi' ? 'Hindi' : activeLang === 'mr' ? 'Marathi' : 'English'}.
+
+User Query: "${userQuery}"`
+
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }]
+        })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+        if (text && text.trim().length > 10) return text.trim()
+      }
+    } catch(e) {
+      console.warn('Gemini live fetch fallback to local engine:', e)
+    }
+  }
+
+  // 2. Comprehensive Multilingual Clinical Knowledge Engine
+  const lower = userQuery.toLowerCase()
+  for (const item of CLINICAL_INSIGHTS) {
+    if (item.keywords.some(k => lower.includes(k.toLowerCase()))) {
+      return item.reply[activeLang] || item.reply['en']
+    }
+  }
+
+  // 3. Dynamic Contextual Health Advice Generator (When query is broad or conversational)
+  if (lower.includes('hello') || lower.includes('hi') || lower.includes('namaste') || lower.includes('namaskar') || lower.includes('नमस्ते') || lower.includes('नमस्कार')) {
+    return activeLang === 'hi'
+      ? `नमस्ते! 🙏 मैं आपका स्वास्थ्य साथी हूँ। आप मुझसे अपनी दवाइयों, किसी भी बीमारी के लक्षण, पानी के सेवन या स्वास्थ्य आहार के बारे में कुछ भी पूछ सकते हैं।`
+      : activeLang === 'mr'
+      ? `नमस्कार! 🙏 मी तुमचा आरोग्य साथी आहे. तुम्ही मला तुमची औषधे, आजारांची लक्षणे, पाण्याचे प्रमाण किंवा आहाराबद्दल काहीही विचारू शकता.`
+      : `Hello! 🙏 I am your Sewaarthi health companion. You can ask me about your medications, symptoms, hydration, diet, or any health inquiry.`
+  }
+
+  if (lower.includes('diet') || lower.includes('food') || lower.includes('khana') || lower.includes('jevan') || lower.includes('खाना') || lower.includes('जेवण')) {
+    return activeLang === 'hi'
+      ? `स्वस्थ और संतुलित आहार के लिए मुख्य सुझाव:\n• 🥗 **हरी सब्जियां और दालें:** अपनी थाली में ताजी सब्जियां, दालें और फल भरपूर मात्रा में शामिल करें।\n• 🫓 **साबुत अनाज:** गेहूं की जगह ज्वार, बाजरा या रागी का सेवन अधिक गुणकारी होता है।\n• 💧 **पानी:** भोजन से आधा घंटा पहले पर्याप्त पानी पिएं।\n• 🚫 **परहेज:** ज्यादा तला हुआ, अत्यधिक मसालेदार और पैकेटबंद भोजन कम से कम खाएं।`
+      : activeLang === 'mr'
+      ? `निरोगी आणि संतुलित आहारासाठी महत्त्वाचे नियम:\n• 🥗 **पालेभाज्या आणि कडधान्ये:** आहारात भरपूर हिरव्या भाज्या, डाळी आणि मोडाची कडधान्ये असावीत.\n• 🫓 **धान्य:** गव्हाऐवजी ज्वारी, बाजरी किंवा नाचणीची भाकरी खाणे आरोग्यासाठी उत्तम असते.\n• 💧 **पाणी:** जेवणाच्या अर्धा तास आधी एक ग्लास पाणी प्या.\n• 🚫 **परहेज:** जास्त तेलकट, अति तिखट आणि जंक फूड टाळा.`
+      : `Key guidelines for a balanced, healthy diet:\n• 🥗 **Veggies & Pulses:** Include generous portions of green leafy vegetables, lentils, and seasonal fruits.\n• 🫓 **Whole Grains:** Millets (Jowar, Bajra, Ragi) and oats provide sustained energy and fiber.\n• 💧 **Hydration:** Drink water 30 minutes before meals to aid digestion.\n• 🚫 **Avoid:** Reduce refined sugars, deep-fried items, and processed snacks.`
+  }
+
+  if (lower.includes('water') || lower.includes('pani') || lower.includes('paani') || lower.includes('पानी') || lower.includes('पाणी')) {
+    return activeLang === 'hi'
+      ? `दैनिक पानी का महत्व:\n• 💧 प्रतिदिन 2.5 से 3 लीटर पानी पीना शरीर से विषाक्त पदार्थों को निकालने और दवाइयों के अवशोषण के लिए आवश्यक है।\n• ⏰ सुबह उठकर 1-2 गिलास गुनगुना पानी पीना पाचन तंत्र को सक्रिय करता है।`
+      : activeLang === 'mr'
+      ? `दैनंदिन पाण्याचे महत्त्व:\n• 💧 दररोज २.५ ते ३ लिटर पाणी प्यायल्याने शरीरातील विषारी घटक बाहेर पडतात आणि औषधांचे शोषण योग्य होते.\n• ⏰ सकाळी उठल्यावर १-२ ग्लास कोमट पाणी पिणे पचनासाठी अत्यंत फायदेशीर आहे.`
+      : `Importance of Daily Hydration:\n• 💧 Drinking 2.5–3.0 liters of water daily ensures optimal kidney filtration and medicine absorption.\n• ⏰ Starting your morning with 1–2 glasses of warm water jumpstarts digestion.`
+  }
+
+  // 4. Personalized Smart Synthesis Response
+  return activeLang === 'hi'
+    ? `आपके स्वास्थ्य सवाल: "${userQuery}" के लिए महत्वपूर्ण सलाह:\n\n• 🩺 **दवा और सावधानी:** यदि आप कोई नियमित दवा ले रहे हैं, तो समय पर लें और पर्याप्त पानी पिएं।\n• 🥗 **आराम और पोषण:** हल्का व पौष्टिक आहार लें और 7-8 घंटे की पूरी नींद लें।\n• ⚠️ **डॉक्टर से संपर्क:** यदि लक्षण गंभीर हैं या 2-3 दिन से बने हुए हैं, तो नजदीकी डॉक्टर से जांच अवश्य करवाएं।`
+    : activeLang === 'mr'
+    ? `तुमच्या आरोग्याच्या प्रश्नाबाबत ("${userQuery}") महत्त्वाचा सल्ला:\n\n• 🩺 **औषध आणि काळजी:** जर तुम्ही नियमित औषधे घेत असाल, तर ती वेळेवर घ्या आणि पुरेसे पाणी प्या.\n• 🥗 **विश्रांती आणि पोषण:** हलका व सकस आहार घ्या आणि ७-८ तास गाढ झोप घ्या.\n• ⚠️ **वैद्यकीय सल्ला:** त्रास जास्त असल्यास किंवा २-३ दिवसांपेक्षा अधिक काळ टिकून राहिल्यास डॉक्टरांचा सल्ला घ्या.`
+    : `Key Health Advice for: "${userQuery}":\n\n• 🩺 **Care & Precautions:** Stay on track with any prescribed medicines and maintain adequate hydration.\n• 🥗 **Rest & Nutrition:** Eat light, nourishing foods and ensure 7–8 hours of sound sleep.\n• ⚠️ **Medical Consultation:** If your symptoms are severe or persist over 2–3 days, please consult a qualified doctor.`
+}
+
 export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateStatus, onAddWater, onNavigate, user, userProfile, lang = 'en' }) {
   const [messages, setMessages] = useState([])
   const [input,   setInput]   = useState('')
@@ -201,12 +320,21 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
   const [voiceEnabled, setVoiceEnabled] = useState(true)
   const [voiceLang, setVoiceLang] = useState(lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN')
 
+  // Derive active assistant language: 'en', 'hi', or 'mr'
+  const activeLang = voiceLang.startsWith('hi') ? 'hi' : voiceLang.startsWith('mr') ? 'mr' : (lang === 'hi' ? 'hi' : lang === 'mr' ? 'mr' : 'en')
+
   const recognitionRef = useRef(null)
   const endRef = useRef(null)
 
   const today = new Date().toISOString().split('T')[0]
   const hour = new Date().getHours()
-  const displayName = user?.displayName || userProfile?.name || user?.email?.split('@')[0] || 'Friend'
+  const displayName = user?.displayName || userProfile?.name || user?.email?.split('@')[0] || (activeLang === 'hi' ? 'दोस्त' : activeLang === 'mr' ? 'मित्र' : 'Friend')
+
+  // Keep voiceLang synced when app lang changes
+  useEffect(() => {
+    const targetCode = lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en-IN'
+    setVoiceLang(targetCode)
+  }, [lang])
 
   // Dynamic context metrics
   const totalMeds = medicines.length
@@ -260,10 +388,10 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
   const speakText = (textToSpeak) => {
     if (!voiceEnabled || !window.speechSynthesis) return
     try {
-      window.speechSynthesis.cancel() // Stop any previous speech
-      const clean = textToSpeak.replace(/\*\*/g, '').replace(/•/g, '').replace(/💡|💊|💧|⚖️|⏰|🍽️|✅|🚨|🤖/g, '')
+      window.speechSynthesis.cancel()
+      const clean = textToSpeak.replace(/\*\*/g, '').replace(/•/g, '').replace(/💡|💊|💧|⚖️|⏰|🍽️|✅|🚨|🤖|⚡|🎉|🍵|💨|🧊|🧘|🥛|🥣|🥗|🏃|🥦|🧂|📵|🫓|🚶/g, '')
       const utterance = new SpeechSynthesisUtterance(clean)
-      utterance.rate = 0.95 // Slightly slower and clearer for seniors
+      utterance.rate = 0.92
       utterance.pitch = 1.0
       utterance.lang = voiceLang
       window.speechSynthesis.speak(utterance)
@@ -290,13 +418,28 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
     }
   }
 
-  // Initial proactive greeting with context
+  // Initial proactive greeting with multilingual support
   useEffect(() => {
-    const greetingText = hour < 12 
-      ? `Good morning, ${displayName}! 🌅\nI'm your Sewaarthi AI health companion. I'm actively monitoring your medication schedule and daily hydration.` 
-      : hour < 17 
-      ? `Good afternoon, ${displayName}! ☀️\nHope your day is going well. I'm here to help with your medications, health tracking, and wellness questions.`
-      : `Good evening, ${displayName}! 🌙\nTime to wind down and ensure all today's medications and hydration goals are completed.`
+    let greetingText = ''
+    if (activeLang === 'hi') {
+      greetingText = hour < 12
+        ? `सुप्रभात, ${displayName}! 🌅\nमैं आपका सेवार्थी AI स्वास्थ्य साथी हूँ। मैं आपकी दवाइयाँ, पानी का सेवन और स्वास्थ्य सवालों के लिए यहाँ हूँ।`
+        : hour < 17
+        ? `शुभ दोपहर, ${displayName}! ☀️\nआशा है आपका दिन अच्छा बीत रहा है। मुझसे किसी भी बीमारी, दवा या स्वास्थ्य सलाह के बारे में पूछें।`
+        : `शुभ संध्या, ${displayName}! 🌙\nआज की दवाइयाँ और पानी का लक्ष्य पूरा करें। स्वास्थ्य संबंधी कोई भी प्रश्न हो तो पूछें।`
+    } else if (activeLang === 'mr') {
+      greetingText = hour < 12
+        ? `सुप्रभात, ${displayName}! 🌅\nमी तुमचा सेवार्थी AI आरोग्य साथी आहे. मी तुमच्या औषधे, पाणी आणि आरोग्याच्या प्रश्नांसाठी येथे आहे.`
+        : hour < 17
+        ? `शुभ दुपार, ${displayName}! ☀️\nतुमचा दिवस चांगला जात असेल अशी आशा आहे. मला कोणताही आजार, औषध किंवा आरोग्याबद्दल विचारा.`
+        : `शुभ संध्याकाळ, ${displayName}! 🌙\nआजची सर्व औषधे आणि पाण्याचे उद्दिष्ट पूर्ण करा. कोणताही आरोग्य प्रश्न विचारा.`
+    } else {
+      greetingText = hour < 12
+        ? `Good morning, ${displayName}! 🌅\nI'm your Sewaarthi AI health companion. Ask me anything about your symptoms, medications, or wellness.`
+        : hour < 17
+        ? `Good afternoon, ${displayName}! ☀️\nHope your day is going well. I'm here to help with your health questions, medications, and hydration.`
+        : `Good evening, ${displayName}! 🌙\nTime to wind down. Check today's medicines and ask me any health questions.`
+    }
 
     setMessages([
       {
@@ -316,20 +459,34 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
         }
       }
     ])
-  }, [user, userProfile])
+  }, [user, userProfile, activeLang])
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
-  // Dynamic intelligent prompt suggestions
-  const dynamicChips = [
+  // Dynamic intelligent prompt suggestions in active language
+  const dynamicChips = activeLang === 'hi' ? [
+    nextMed ? `💊 ${nextMed.name} लें` : '📋 आज की दवाइयाँ',
+    waterPercent < 100 ? '💧 250ml पानी दर्ज करें' : '💧 पानी की स्थिति',
+    '🍵 सर्दी-खांसी के उपाय',
+    '🩺 बीपी और शुगर डाइट',
+    '⚖️ मेरा BMI जांचें',
+    '💊 सिरदर्द का इलाज'
+  ] : activeLang === 'mr' ? [
+    nextMed ? `💊 ${nextMed.name} घ्या` : '📋 आजची औषधे',
+    waterPercent < 100 ? '💧 250ml पाणी नोंदवा' : '💧 पाण्याची स्थिती',
+    '🍵 सर्दी-खोकल्यावर उपाय',
+    '🩺 बीपी व मधुमेह आहार',
+    '⚖️ माझा BMI तपासा',
+    '💊 डोकेदुखीवर उपाय'
+  ] : [
     nextMed ? `💊 Take ${nextMed.name}` : '📋 Today’s Meds',
     waterPercent < 100 ? '💧 Log 250ml Water' : '💧 Water Status',
+    '🍵 Cold & Cough Care',
+    '🩺 BP & Diabetes Diet',
     '⚖️ Check my BMI',
-    '💊 Add new medicine',
-    '🩺 Drug interactions advice',
-    '📊 Daily Health Summary'
+    '💊 Headache Relief'
   ]
 
   const handleUserMessage = async (rawText) => {
@@ -342,20 +499,39 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
     const lower = msg.toLowerCase()
 
     // ── 1. Mark Medicine as Taken via Chat ──
-    const isMarkTaken = (lower.includes('took') || lower.includes('taken') || lower.includes('le li') || lower.includes('khali') || lower.includes('consumed') || lower.includes('mark')) && (lower.includes('med') || lower.includes('dawai') || lower.includes('goli') || medicines.some(m => lower.includes(m.name.toLowerCase())))
+    const isMarkTaken = (
+      lower.includes('took') || lower.includes('taken') || lower.includes('consumed') || lower.includes('mark') ||
+      lower.includes('le li') || lower.includes('le liya') || lower.includes('kha li') || lower.includes('kha liya') ||
+      lower.includes('ghetli') || lower.includes('ghetle') || lower.includes('khalli') || lower.includes('घेतली') ||
+      lower.includes('घेतले') || lower.includes('खा ली') || lower.includes('ले ली') || lower.includes('घेतलं')
+    ) && (
+      lower.includes('med') || lower.includes('dawai') || lower.includes('goli') || lower.includes('aushadh') ||
+      lower.includes('दवाई') || lower.includes('औषध') || lower.includes('गोळी') ||
+      medicines.some(m => lower.includes(m.name.toLowerCase()))
+    )
+
     if (isMarkTaken) {
-      setThinkingTip('Checking active prescriptions...')
+      setThinkingTip(activeLang === 'hi' ? 'दवाइयों की जाँच हो रही है...' : activeLang === 'mr' ? 'औषधांची तपासणी करत आहे...' : 'Checking active prescriptions...')
       const targetMed = medicines.find(m => lower.includes(m.name.toLowerCase())) || medicines.find(m => m.status === 'pending')
       if (targetMed) {
         if (onUpdateStatus) {
           try { await onUpdateStatus(targetMed.id, 'taken') } catch(e) {}
         }
-        const confirmText = `Wonderful job! I have marked ${targetMed.name} as taken.`
-        speakText(confirmText)
+        const confirmSpeech = activeLang === 'hi'
+          ? `शाबाश! मैंने ${targetMed.name} को ली गई दवा के रूप में चिह्नित कर दिया है।`
+          : activeLang === 'mr'
+          ? `छान काम! मी ${targetMed.name} हे औषध घेतले म्हणून नोंदवले आहे.`
+          : `Wonderful job! I have marked ${targetMed.name} as taken.`
+
+        speakText(confirmSpeech)
         setTimeout(() => {
           setMessages(prev => [...prev, {
             role: 'bot',
-            text: `Wonderful job! I have updated your dashboard adherence tracker:`,
+            text: activeLang === 'hi'
+              ? `बहुत अच्छा! मैंने आपके डैशबोर्ड पर ${targetMed.name} की खुराक पूर्ण कर दी है:`
+              : activeLang === 'mr'
+              ? `उत्तम! मी तुमच्या डॅशबोर्डवर ${targetMed.name} औषधाची नोंद पूर्ण केली आहे:`
+              : `Wonderful job! I have updated your dashboard adherence tracker:`,
             card: {
               type: 'taken_success',
               data: {
@@ -372,9 +548,17 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
     }
 
     // ── 2. Log Water Intake ──
-    const isWaterLog = (lower.includes('water') || lower.includes('pani') || lower.includes('drank') || lower.includes('drink')) && (lower.includes('add') || lower.includes('log') || lower.includes('drank') || lower.includes('glass') || lower.includes('ml') || lower.includes('piya') || lower.includes('had'))
+    const isWaterLog = (
+      lower.includes('water') || lower.includes('pani') || lower.includes('paani') || lower.includes('drank') ||
+      lower.includes('drink') || lower.includes('पानी') || lower.includes('पाणी')
+    ) && (
+      lower.includes('add') || lower.includes('log') || lower.includes('drank') || lower.includes('glass') ||
+      lower.includes('ml') || lower.includes('piya') || lower.includes('had') || lower.includes('pyalo') ||
+      lower.includes('pyale') || lower.includes('पिया') || lower.includes('प्यालो') || lower.includes('प्याले')
+    )
+
     if (isWaterLog) {
-      setThinkingTip('Updating hydration balance...')
+      setThinkingTip(activeLang === 'hi' ? 'पानी का स्तर अपडेट किया जा रहा है...' : activeLang === 'mr' ? 'पाण्याची नोंद अद्ययावत करत आहे...' : 'Updating hydration balance...')
       const ml = parseWaterIntake(msg) || 250
       let newTotal = null
       if (onAddWater) {
@@ -383,11 +567,21 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
       const currentTotal = newTotal || (localWater + ml)
       const pct = Math.min(Math.round((currentTotal / waterGoal) * 100), 100)
 
-      speakText(`Recorded ${ml} milliliters of water. Great job staying hydrated!`)
+      const speechMsg = activeLang === 'hi'
+        ? `${ml} मिलीलीटर पानी दर्ज किया गया। बहुत बढ़िया!`
+        : activeLang === 'mr'
+        ? `${ml} मिलीलीटर पाण्याची नोंद झाली. अभिनंदन!`
+        : `Recorded ${ml} milliliters of water. Great job staying hydrated!`
+
+      speakText(speechMsg)
       setTimeout(() => {
         setMessages(prev => [...prev, {
           role: 'bot',
-          text: `Hydration recorded! Staying consistently hydrated promotes better drug absorption and kidney health.`,
+          text: activeLang === 'hi'
+            ? `पानी का सेवन दर्ज हो गया! पर्याप्त पानी पीने से दवाइयों का अवशोषण और किडनी का स्वास्थ्य बेहतर रहता है।`
+            : activeLang === 'mr'
+            ? `पाण्याची नोंद यशस्वी झाली! पुरेसे पाणी प्यायल्याने औषधांचे योग्य शोषण होते आणि आरोग्य चांगले राहते.`
+            : `Hydration recorded! Staying consistently hydrated promotes better drug absorption and kidney health.`,
           card: {
             type: 'water',
             data: {
@@ -404,9 +598,18 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
     }
 
     // ── 3. Schedule New Medicine ──
-    const isMedAdd = (lower.includes('add') || lower.includes('schedule') || lower.includes('remind') || lower.includes('take') || lower.includes('start') || lower.includes('nayi dawai')) && (lower.includes('med') || lower.includes('tablet') || lower.includes('pill') || lower.includes('dawai') || lower.includes('goli') || lower.includes('mg') || lower.includes('dose'))
+    const isMedAdd = (
+      lower.includes('add') || lower.includes('schedule') || lower.includes('remind') || lower.includes('take') ||
+      lower.includes('start') || lower.includes('nayi dawai') || lower.includes('जोड़ो') || lower.includes('जोड़ा') ||
+      lower.includes('जोडा') || lower.includes('नवीन औषध')
+    ) && (
+      lower.includes('med') || lower.includes('tablet') || lower.includes('pill') || lower.includes('dawai') ||
+      lower.includes('goli') || lower.includes('mg') || lower.includes('dose') || lower.includes('दवाई') ||
+      lower.includes('औषध') || lower.includes('गोळी')
+    )
+
     if (isMedAdd) {
-      setThinkingTip('Analyzing dosage, frequency & meal timing...')
+      setThinkingTip(activeLang === 'hi' ? 'दवा की खुराक और समय निर्धारित हो रहा है...' : activeLang === 'mr' ? 'औषधाची वेळ व डोस तपासत आहे...' : 'Analyzing dosage, frequency & meal timing...')
       const medData = parseMedicineSchedule(msg)
       if (medData) {
         if (onAddMedicine) {
@@ -418,11 +621,22 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
             })
           } catch(e) {}
         }
-        speakText(`Scheduled ${medData.name} ${medData.dosage} with reminders.`)
+
+        const addSpeech = activeLang === 'hi'
+          ? `${medData.name} ${medData.dosage} का रिमाइंडर निर्धारित कर दिया गया है।`
+          : activeLang === 'mr'
+          ? `${medData.name} ${medData.dosage} चे स्मरणपत्र सेट केले आहे.`
+          : `Scheduled ${medData.name} ${medData.dosage} with reminders.`
+
+        speakText(addSpeech)
         setTimeout(() => {
           setMessages(prev => [...prev, {
             role: 'bot',
-            text: `I have scheduled your medicine with reminders. Here are the confirmed details:`,
+            text: activeLang === 'hi'
+              ? `मैंने आपकी दवा का रिमाइंडर सेट कर दिया है। विवरण नीचे दिया गया है:`
+              : activeLang === 'mr'
+              ? `मी तुमच्या औषधाचे रिमाइंडर वेळापत्रक तयार केले आहे. तपशील खालीलप्रमाणे:`
+              : `I have scheduled your medicine with reminders. Here are the confirmed details:`,
             card: {
               type: 'medicine',
               data: {
@@ -441,21 +655,37 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
     }
 
     // ── 4. Medicine List & Schedule Inquiries ──
-    if (lower.includes('my medicine') || lower.includes('what medicine') || lower.includes('scheduled medicine') || lower.includes('my dawai') || lower.includes('meds list') || lower.includes('aushadh') || lower.includes('list')) {
-      setThinkingTip('Fetching your active prescription routine...')
+    if (
+      lower.includes('my medicine') || lower.includes('what medicine') || lower.includes('scheduled medicine') ||
+      lower.includes('my dawai') || lower.includes('meds list') || lower.includes('aushadh') || lower.includes('list') ||
+      lower.includes('मेरी दवाई') || lower.includes('माझी औषधे') || lower.includes('दवाइयों की सूची') || lower.includes('औषधांची यादी')
+    ) {
+      setThinkingTip(activeLang === 'hi' ? 'दवाइयों की सूची प्राप्त हो रही है...' : activeLang === 'mr' ? 'औषधांची यादी लोड होत आहे...' : 'Fetching your active prescription routine...')
       setTimeout(() => {
         if (!medicines || medicines.length === 0) {
-          const resp = "You currently have no scheduled medicines."
-          speakText(resp)
-          setMessages(prev => [...prev, {
-            role: 'bot',
-            text: "You currently have no scheduled medicines. You can ask me to add one anytime, for example: 'Add Metformin 500mg morning and night after food'."
-          }])
+          const emptyResp = activeLang === 'hi'
+            ? "वर्तमान में आपकी कोई निर्धारित दवाई नहीं है। आप मुझे नई दवाई जोड़ने के लिए कह सकते हैं।"
+            : activeLang === 'mr'
+            ? "सध्या तुमचे कोणतेही औषध नियोजित नाही. तुम्ही मला नवीन औषध जोडण्यास सांगू शकता."
+            : "You currently have no scheduled medicines. You can ask me to add one anytime."
+
+          speakText(emptyResp)
+          setMessages(prev => [...prev, { role: 'bot', text: emptyResp }])
         } else {
-          speakText(`You have ${medicines.length} active medicines scheduled.`)
+          const listSpeech = activeLang === 'hi'
+            ? `आपके पास ${medicines.length} निर्धारित दवाइयाँ हैं।`
+            : activeLang === 'mr'
+            ? `तुमच्याकडे ${medicines.length} नियोजित औषधे आहेत.`
+            : `You have ${medicines.length} active medicines scheduled.`
+
+          speakText(listSpeech)
           setMessages(prev => [...prev, {
             role: 'bot',
-            text: `Here is your active medication schedule (${medicines.length} medicine${medicines.length > 1 ? 's' : ''}):`,
+            text: activeLang === 'hi'
+              ? `यह रही आपकी सक्रिय दवाई अनुसूची (${medicines.length} दवाइयाँ):`
+              : activeLang === 'mr'
+              ? `हे आहे तुमचे औषध वेळापत्रक (${medicines.length} औषधे):`
+              : `Here is your active medication schedule (${medicines.length} medicine${medicines.length > 1 ? 's' : ''}):`,
             card: {
               type: 'medicine_list',
               data: { medicines }
@@ -467,36 +697,15 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
       return
     }
 
-    // ── 5. Water Status Inquiry ──
-    if (lower.includes('how much water') || lower.includes('water status') || lower.includes('today water') || lower.includes('pani kitna') || lower.includes('hydration')) {
-      setThinkingTip('Calculating daily hydration progress...')
-      const pct = Math.min(Math.round((localWater / waterGoal) * 100), 100)
-      speakText(`You have consumed ${localWater} milliliters of water today, which is ${pct} percent of your goal.`)
-      setTimeout(() => {
-        setMessages(prev => [...prev, {
-          role: 'bot',
-          text: `Here is your hydration status for today (${today}):`,
-          card: {
-            type: 'water',
-            data: {
-              amount: 0,
-              total: localWater,
-              goal: waterGoal,
-              percent: pct
-            }
-          }
-        }])
-        setLoading(false)
-      }, 400)
-      return
-    }
+    // ── 5. BMI Inquiry & Calculation ──
+    if (
+      lower.includes('bmi') || lower.includes('body mass') || lower.includes('mera bmi') ||
+      lower.includes('weight status') || lower.includes('vajan') || lower.includes('वजन') || lower.includes('उंची') || lower.includes('ऊंचाई')
+    ) {
+      setThinkingTip(activeLang === 'hi' ? 'बीएमआई और वजन का विश्लेषण हो रहा है...' : activeLang === 'mr' ? 'बीएमआय व वजनाचे विश्लेषण करत आहे...' : 'Evaluating Body Mass Index & health range...')
+      const hMatch = lower.match(/(?:height|h|उंचाई|ऊंचाई|उंची)\s*(?:is|:|=|आहे|है)?\s*(\d+(?:\.\d+)?)\s*(cm|ft|feet|in)?/i) || lower.match(/(\d{2,3})\s*cm/i)
+      const wMatch = lower.match(/(?:weight|w|wt|वजन)\s*(?:is|:|=|आहे|है)?\s*(\d+(?:\.\d+)?)\s*(kg|kgs|lbs|pound)?/i) || lower.match(/(\d{2,3})\s*kg/i)
 
-    // ── 6. BMI Inquiry & Calculation ──
-    if (lower.includes('bmi') || lower.includes('body mass') || lower.includes('mera bmi') || lower.includes('weight status') || lower.includes('vajan')) {
-      setThinkingTip('Evaluating Body Mass Index & health range...')
-      const hMatch = lower.match(/(?:height|h)\s*(?:is|:|=)?\s*(\d+(?:\.\d+)?)\s*(cm|ft|feet|in)?/i) || lower.match(/(\d{2,3})\s*cm/i)
-      const wMatch = lower.match(/(?:weight|w|wt)\s*(?:is|:|=)?\s*(\d+(?:\.\d+)?)\s*(kg|kgs|lbs|pound)?/i) || lower.match(/(\d{2,3})\s*kg/i)
-      
       let calcH = hMatch ? parseFloat(hMatch[1]) : (userProfile?.height ? parseFloat(userProfile.height) : null)
       let calcW = wMatch ? parseFloat(wMatch[1]) : (userProfile?.weight ? parseFloat(userProfile.weight) : null)
 
@@ -505,16 +714,33 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
         const hm = calcH / 100
         const calcB = (calcW / (hm * hm)).toFixed(1)
         const numB = parseFloat(calcB)
-        const cat = numB < 18.5 ? 'Underweight (<18.5)' : numB < 25 ? 'Normal / Healthy Weight (18.5–24.9)' : numB < 30 ? 'Overweight (25–29.9)' : 'Obese (≥30)'
+        const cat = numB < 18.5
+          ? (activeLang === 'hi' ? 'कम वजन (<18.5)' : activeLang === 'mr' ? 'कमी वजन (<18.5)' : 'Underweight (<18.5)')
+          : numB < 25
+          ? (activeLang === 'hi' ? 'सामान्य व स्वस्थ वजन (18.5–24.9)' : activeLang === 'mr' ? 'सामान्य व निरोगी वजन (18.5–24.9)' : 'Normal / Healthy Weight (18.5–24.9)')
+          : numB < 30
+          ? (activeLang === 'hi' ? 'अधिक वजन (25–29.9)' : activeLang === 'mr' ? 'जास्त वजन (25–29.9)' : 'Overweight (25–29.9)')
+          : (activeLang === 'hi' ? 'मोटापा (≥30)' : activeLang === 'mr' ? 'लठ्ठपणा (≥30)' : 'Obese (≥30)')
+
         const color = numB < 18.5 ? '#38bdf8' : numB < 25 ? '#00c48c' : numB < 30 ? '#fbbf24' : '#ff4d6a'
         const minW = (18.5 * hm * hm).toFixed(1)
         const maxW = (24.9 * hm * hm).toFixed(1)
 
-        speakText(`Your BMI is ${calcB}, which falls in the ${cat} range. Healthy weight for your height is ${minW} to ${maxW} kilograms.`)
+        const bmiSpeech = activeLang === 'hi'
+          ? `आपका बीएमआई ${calcB} है, जो ${cat} श्रेणी में आता है। आपकी ऊंचाई के लिए स्वस्थ वजन ${minW} से ${maxW} किलोग्राम है।`
+          : activeLang === 'mr'
+          ? `तुमचा बीएमआय ${calcB} आहे, जे ${cat} श्रेणीत येते. तुमच्या उंचीसाठी निरोगी वजन ${minW} ते ${maxW} किलो आहे.`
+          : `Your BMI is ${calcB}, which falls in the ${cat} range. Healthy weight for your height is ${minW} to ${maxW} kilograms.`
+
+        speakText(bmiSpeech)
         setTimeout(() => {
           setMessages(prev => [...prev, {
             role: 'bot',
-            text: `Here is your comprehensive BMI assessment:`,
+            text: activeLang === 'hi'
+              ? `यहाँ आपका संपूर्ण बीएमआई स्वास्थ्य मूल्यांकन है:`
+              : activeLang === 'mr'
+              ? `येथे तुमचे संपूर्ण बीएमआय आरोग्य मूल्यांकन आहे:`
+              : `Here is your comprehensive BMI assessment:`,
             card: {
               type: 'bmi',
               data: {
@@ -531,43 +757,43 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
         }, 450)
         return
       } else {
-        const askBmi = "To calculate your BMI, tell me your height and weight! For example: Calculate BMI for height 170cm and weight 65kg."
+        const askBmi = activeLang === 'hi'
+          ? "बीएमआई की गणना के लिए, अपनी ऊंचाई और वजन बताएं! उदाहरण: 'ऊंचाई 170cm वजन 65kg का BMI बताओ'."
+          : activeLang === 'mr'
+          ? "बीएमआय काढण्यासाठी तुमची उंची आणि वजन सांगा! उदाहरण: 'उंची 170cm वजन 65kg बीएमआय काढा'."
+          : "To calculate your BMI, tell me your height and weight! For example: Calculate BMI for height 170cm and weight 65kg."
+
         speakText(askBmi)
         setTimeout(() => {
-          setMessages(prev => [...prev, {
-            role: 'bot',
-            text: askBmi
-          }])
+          setMessages(prev => [...prev, { role: 'bot', text: askBmi }])
           setLoading(false)
         }, 400)
         return
       }
     }
 
-    // ── 7. Clinical Drug & Medical Knowledge Base ──
-    for (const item of CLINICAL_INSIGHTS) {
-      if (item.keywords.some(k => lower.includes(k))) {
-        setThinkingTip('Reviewing pharmacological guidelines...')
-        speakText(item.reply)
-        setTimeout(() => {
-          setMessages(prev => [...prev, { role: 'bot', text: item.reply }])
-          setLoading(false)
-        }, 500)
-        return
-      }
-    }
-
-    // ── 8. Intelligent Default Health Response ──
-    setThinkingTip('Processing health inquiry...')
-    const defaultReply = "I am your voice-enabled health companion! You can speak or type to log water, schedule medicines, or ask health questions."
-    speakText(defaultReply)
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        role: 'bot',
-        text: `I am your voice-enabled health companion! 🤖🎙️\n\nYou can speak or type to:\n• 💊 **Schedule or Mark Medicine:** "Add Paracetamol 500mg morning" or "I took my Metformin"\n• 💧 **Log Water:** "I drank 250ml water"\n• ⚖️ **Evaluate BMI:** "Calculate BMI for height 168cm weight 62kg"\n• 🩺 **Clinical Questions:** Ask about food timings, side effects, missed doses, or interactions!`
-      }])
+    // ── 6. Smart AI Medical Advice for ANY Question ──
+    setThinkingTip(activeLang === 'hi' ? 'उत्तर तैयार किया जा रहा है...' : activeLang === 'mr' ? 'उत्तर तयार करत आहे...' : 'Generating medical advice...')
+    
+    try {
+      const userContext = { totalMeds, waterIntake: localWater, waterGoal }
+      const aiReply = await generateSmartAIResponse(msg, activeLang, userContext)
+      speakText(aiReply)
+      setTimeout(() => {
+        setMessages(prev => [...prev, { role: 'bot', text: aiReply }])
+        setLoading(false)
+      }, 400)
+    } catch(err) {
+      console.error('AI generation error:', err)
+      const errReply = activeLang === 'hi'
+        ? `मुझे आपका सवाल समझने में कुछ परेशानी हुई। कृपया अपनी समस्या दोबारा पूछें।`
+        : activeLang === 'mr'
+        ? `मला तुमचा प्रश्न समजण्यात अडचण आली. कृपया तुमचा प्रश्न पुन्हा विचारा.`
+        : `I had trouble processing that. Please try rephrasing your health question.`
+      speakText(errReply)
+      setMessages(prev => [...prev, { role: 'bot', text: errReply }])
       setLoading(false)
-    }, 550)
+    }
   }
 
   return (
@@ -575,8 +801,8 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
       {/* ── HEADER ── */}
       <div className="greeting s1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <h2>AI Voice & Health Assistant 🤖🎙️</h2>
-          <p>Tap the microphone to speak in English, Hindi, or Marathi</p>
+          <h2>{activeLang === 'hi' ? 'AI वॉयस और स्वास्थ्य सहायक 🤖🎙️' : activeLang === 'mr' ? 'AI व्हॉईस आणि आरोग्य सहाय्यक 🤖🎙️' : 'AI Voice & Health Assistant 🤖🎙️'}</h2>
+          <p>{activeLang === 'hi' ? 'अंग्रेजी, हिंदी या मराठी में कोई भी सवाल पूछें या बोलें' : activeLang === 'mr' ? 'इंग्रजी, हिंदी किंवा मराठीत कोणताही प्रश्न विचारा अथवा बोला' : 'Ask any health question in English, Hindi, or Marathi'}</p>
         </div>
 
         {/* Voice controls & Language selector */}
@@ -608,7 +834,7 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
               padding: '6px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 700
             }}
           >
-            {voiceEnabled ? '🔊 Voice On' : '🔇 Voice Off'}
+            {voiceEnabled ? (activeLang === 'hi' ? '🔊 आवाज़ चालू' : activeLang === 'mr' ? '🔊 आवाज सुरू' : '🔊 Voice On') : (activeLang === 'hi' ? '🔇 म्यूट' : activeLang === 'mr' ? '🔇 म्यूट' : '🔇 Voice Off')}
           </button>
         </div>
       </div>
@@ -630,11 +856,11 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
               <div key={i} className={'chat-bubble ' + m.role} style={{ lineHeight:1.5, marginBottom:14, padding:'14px 18px' }}>
                 {m.role === 'bot' && (
                   <div className="bot-label" style={{ fontWeight:800, marginBottom:6, color:'var(--blue)', fontSize:12, display:'flex', alignItems:'center', gap:6 }}>
-                    🤖 Sewaarthi AI
+                    🤖 {activeLang === 'hi' ? 'सेवार्थी AI' : activeLang === 'mr' ? 'सेवार्थी AI' : 'Sewaarthi AI'}
                     <span style={{ fontSize:10, background:'rgba(26,111,255,0.1)', padding:'2px 6px', borderRadius:6, color:'var(--blue)', fontWeight:600 }}>Active Care</span>
                   </div>
                 )}
-                
+
                 {/* Formatted Text */}
                 <FormattedText text={m.text} />
 
@@ -642,28 +868,30 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
                 {m.card && m.card.type === 'daily_briefing' && (
                   <div style={{ background:'linear-gradient(135deg, rgba(26,111,255,0.08) 0%, rgba(56,189,248,0.06) 100%)', border:'1.5px solid rgba(26,111,255,0.2)', borderRadius:18, padding:'16px 18px', marginTop:12 }}>
                     <div style={{ fontSize:13, fontWeight:800, color:'var(--blue)', marginBottom:12, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                      <span>⚡ Real-Time Health Summary</span>
+                      <span>⚡ {activeLang === 'hi' ? 'दैनिक स्वास्थ्य सारांश' : activeLang === 'mr' ? 'दैनंदिन आरोग्य सारांश' : 'Real-Time Health Summary'}</span>
                       <span style={{ fontSize:11, color:'var(--text3)' }}>{today}</span>
                     </div>
 
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12 }}>
                       <div style={{ background:'rgba(255,255,255,0.85)', padding:'10px 12px', borderRadius:12, border:'1px solid rgba(26,111,255,0.12)' }}>
-                        <div style={{ fontSize:10, color:'var(--text3)', fontWeight:600 }}>💊 MEDICATIONS</div>
+                        <div style={{ fontSize:10, color:'var(--text3)', fontWeight:600 }}>💊 {activeLang === 'hi' ? 'दवाइयाँ' : activeLang === 'mr' ? 'औषधे' : 'MEDICATIONS'}</div>
                         <div style={{ fontSize:15, fontWeight:800, color:'var(--text)', marginTop:2 }}>
-                          {m.card.data.takenMeds} / {m.card.data.totalMeds} taken
+                          {m.card.data.takenMeds} / {m.card.data.totalMeds} {activeLang === 'hi' ? 'ली गईं' : activeLang === 'mr' ? 'घेतले' : 'taken'}
                         </div>
                         <div style={{ fontSize:11, color: m.card.data.pendingMeds > 0 ? 'var(--warning)' : 'var(--success)', fontWeight:600, marginTop:2 }}>
-                          {m.card.data.pendingMeds > 0 ? `${m.card.data.pendingMeds} pending` : 'All taken! ✅'}
+                          {m.card.data.pendingMeds > 0
+                            ? `${m.card.data.pendingMeds} ${activeLang === 'hi' ? 'बाकी' : activeLang === 'mr' ? 'बाकी' : 'pending'}`
+                            : (activeLang === 'hi' ? 'सभी ली गईं! ✅' : activeLang === 'mr' ? 'सर्व घेतले! ✅' : 'All taken! ✅')}
                         </div>
                       </div>
 
                       <div style={{ background:'rgba(255,255,255,0.85)', padding:'10px 12px', borderRadius:12, border:'1px solid rgba(56,189,248,0.2)' }}>
-                        <div style={{ fontSize:10, color:'var(--text3)', fontWeight:600 }}>💧 HYDRATION</div>
+                        <div style={{ fontSize:10, color:'var(--text3)', fontWeight:600 }}>💧 {activeLang === 'hi' ? 'पानी का स्तर' : activeLang === 'mr' ? 'पाण्याचे प्रमाण' : 'HYDRATION'}</div>
                         <div style={{ fontSize:15, fontWeight:800, color:'#0284c7', marginTop:2 }}>
                           {m.card.data.waterIntake} ml
                         </div>
                         <div style={{ fontSize:11, color:'var(--text3)', fontWeight:600, marginTop:2 }}>
-                          {m.card.data.waterPercent}% of {m.card.data.waterGoal}ml
+                          {m.card.data.waterPercent}% / {m.card.data.waterGoal}ml
                         </div>
                       </div>
                     </div>
@@ -671,7 +899,7 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
                     {m.card.data.nextMed && (
                       <div style={{ background:'rgba(26,111,255,0.06)', borderRadius:12, padding:'10px 12px', display:'flex', justifyContent:'space-between', alignItems:'center', border:'1px dashed rgba(26,111,255,0.2)' }}>
                         <div>
-                          <div style={{ fontSize:11, color:'var(--text3)' }}>Upcoming Dose:</div>
+                          <div style={{ fontSize:11, color:'var(--text3)' }}>{activeLang === 'hi' ? 'आगामी खुराक:' : activeLang === 'mr' ? 'पुढील डोस:' : 'Upcoming Dose:'}</div>
                           <strong style={{ fontSize:13, color:'var(--text)' }}>💊 {m.card.data.nextMed.name}</strong> ({m.card.data.nextMed.dosage})
                         </div>
                         <span style={{ background:'var(--blue)', color:'#fff', padding:'4px 8px', borderRadius:8, fontSize:11, fontWeight:700 }}>
@@ -695,12 +923,12 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
                       </span>
                     </div>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, fontSize:12, color:'var(--text2)', marginBottom:8 }}>
-                      <div>⏰ <strong>Time:</strong> {m.card.data.times.join(', ')}</div>
-                      <div>🍽️ <strong>Timing:</strong> {m.card.data.foodTiming} food</div>
+                      <div>⏰ <strong>{activeLang === 'hi' ? 'समय:' : activeLang === 'mr' ? 'वेळ:' : 'Time:'}</strong> {m.card.data.times.join(', ')}</div>
+                      <div>🍽️ <strong>{activeLang === 'hi' ? 'भोजन:' : activeLang === 'mr' ? 'अन्न:' : 'Timing:'}</strong> {m.card.data.foodTiming === 'before' ? (activeLang === 'hi' ? 'खाने से पहले' : activeLang === 'mr' ? 'जेवणापूर्वी' : 'Before food') : m.card.data.foodTiming === 'with' ? (activeLang === 'hi' ? 'खाने के साथ' : activeLang === 'mr' ? 'जेवणासह' : 'With food') : (activeLang === 'hi' ? 'खाने के बाद' : activeLang === 'mr' ? 'जेवणानंतर' : 'After food')}</div>
                     </div>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:11, paddingTop:8, borderTop:'1px dashed rgba(26,111,255,0.18)', color:'var(--success)', fontWeight:700 }}>
-                      <span>✅ Scheduled & Reminders Active</span>
-                      <span style={{ color:'var(--text3)', fontWeight:500 }}>{m.card.data.duration} days</span>
+                      <span>✅ {activeLang === 'hi' ? 'रिमाइंडर सक्रिय' : activeLang === 'mr' ? 'रिमाइंडर सक्रिय' : 'Scheduled & Reminders Active'}</span>
+                      <span style={{ color:'var(--text3)', fontWeight:500 }}>{m.card.data.duration} {activeLang === 'hi' ? 'दिन' : activeLang === 'mr' ? 'दिवस' : 'days'}</span>
                     </div>
                   </div>
                 )}
@@ -711,7 +939,7 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
                     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                       <div style={{ fontSize:26 }}>🎉</div>
                       <div>
-                        <strong style={{ fontSize:15, color:'var(--success)' }}>Dose Confirmed Taken!</strong>
+                        <strong style={{ fontSize:15, color:'var(--success)' }}>{activeLang === 'hi' ? 'खुराक ली गई पुष्टि हुई!' : activeLang === 'mr' ? 'डोस घेतल्याची पुष्टी झाली!' : 'Dose Confirmed Taken!'}</strong>
                         <div style={{ fontSize:12, color:'var(--text)', marginTop:2 }}>
                           {m.card.data.name} ({m.card.data.dosage}) · {m.card.data.time}
                         </div>
@@ -727,7 +955,7 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <span style={{ fontSize:22 }}>💧</span>
                         <strong style={{ fontSize:15, color:'#0284c7' }}>
-                          {m.card.data.amount > 0 ? `+${m.card.data.amount}ml Water Logged` : 'Hydration Tracker'}
+                          {m.card.data.amount > 0 ? `+${m.card.data.amount}ml ${activeLang === 'hi' ? 'पानी दर्ज हुआ' : activeLang === 'mr' ? 'पाणी नोंदवले' : 'Water Logged'}` : (activeLang === 'hi' ? 'जल ट्रैकर' : activeLang === 'mr' ? 'पाणी ट्रॅकर' : 'Hydration Tracker')}
                         </strong>
                       </div>
                       <span style={{ fontSize:13, fontWeight:800, color:'#0284c7' }}>{m.card.data.total}ml</span>
@@ -736,8 +964,8 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
                       <div style={{ height:'100%', width:`${m.card.data.percent}%`, background:'linear-gradient(90deg,#38bdf8,#1a6fff)', borderRadius:99, transition:'width 0.4s ease' }} />
                     </div>
                     <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'var(--text3)', marginTop:6, fontWeight:600 }}>
-                      <span>Daily Goal: {m.card.data.goal}ml</span>
-                      <span style={{ color:'var(--blue)' }}>{m.card.data.percent}% Completed</span>
+                      <span>{activeLang === 'hi' ? 'दैनिक लक्ष्य:' : activeLang === 'mr' ? 'दैनंदिन उद्दिष्ट:' : 'Daily Goal:'} {m.card.data.goal}ml</span>
+                      <span style={{ color:'var(--blue)' }}>{m.card.data.percent}% {activeLang === 'hi' ? 'पूर्ण' : activeLang === 'mr' ? 'पूर्ण' : 'Completed'}</span>
                     </div>
                   </div>
                 )}
@@ -748,136 +976,113 @@ export default function AIAssistant({ medicines = [], onAddMedicine, onUpdateSta
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <span style={{ fontSize:22 }}>⚖️</span>
-                        <strong style={{ fontSize:15, color:'var(--text)' }}>BMI Evaluation</strong>
+                        <strong style={{ fontSize:15, color:'var(--text)' }}>{activeLang === 'hi' ? 'बीएमआई मूल्यांकन' : activeLang === 'mr' ? 'बीएमआय मूल्यांकन' : 'BMI Assessment'}</strong>
                       </div>
-                      <span style={{ background:m.card.data.color, color:'#fff', padding:'4px 12px', borderRadius:99, fontSize:13, fontWeight:800 }}>
+                      <span style={{ fontSize:18, fontWeight:800, color: m.card.data.color, fontFamily:'var(--fh)' }}>
                         {m.card.data.bmi}
                       </span>
                     </div>
-                    <div style={{ fontSize:13, fontWeight:700, color:m.card.data.color, marginBottom:8 }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, fontSize:12, color:'var(--text2)', marginBottom:8 }}>
+                      <div>📏 {activeLang === 'hi' ? 'ऊंचाई:' : activeLang === 'mr' ? 'उंची:' : 'Height:'} <strong>{m.card.data.height} cm</strong></div>
+                      <div>⚖️ {activeLang === 'hi' ? 'वजन:' : activeLang === 'mr' ? 'वजन:' : 'Weight:'} <strong>{m.card.data.weight} kg</strong></div>
+                    </div>
+                    <div style={{ background:'rgba(255,255,255,0.8)', padding:'8px 12px', borderRadius:10, fontSize:12, fontWeight:700, color: m.card.data.color, marginBottom:6 }}>
                       {m.card.data.category}
                     </div>
-                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'var(--text2)', marginBottom:8 }}>
-                      <span>Height: <strong>{m.card.data.height} cm</strong></span>
-                      <span>Weight: <strong>{m.card.data.weight} kg</strong></span>
-                    </div>
-                    <div style={{ fontSize:11, color:'var(--text2)', borderTop:'1px dashed rgba(26,111,255,0.18)', paddingTop:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                      <span>🎯 Healthy weight target:</span>
-                      <strong style={{ color:'var(--blue)' }}>{m.card.data.idealRange}</strong>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>
+                      🎯 {activeLang === 'hi' ? 'स्वस्थ वजन सीमा:' : activeLang === 'mr' ? 'निरोगी वजन मर्यादा:' : 'Healthy Weight Range:'} <strong>{m.card.data.idealRange}</strong>
                     </div>
                   </div>
                 )}
 
-                {/* ── 6. Medicine Schedule List Card ── */}
+                {/* ── 6. Medicine List Card ── */}
                 {m.card && m.card.type === 'medicine_list' && (
-                  <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:8 }}>
-                    {m.card.data.medicines.map((med, idx) => (
-                      <div key={idx} style={{ background:'rgba(26,111,255,0.05)', border:'1px solid rgba(26,111,255,0.14)', borderRadius:12, padding:'10px 14px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                        <div>
-                          <div style={{ fontWeight:700, fontSize:13, color:'var(--text)' }}>💊 {med.name}</div>
-                          <div style={{ fontSize:11, color:'var(--text3)' }}>{med.dosage || '1 dose'} · {med.foodTiming || 'after'} food</div>
-                        </div>
-                        <div style={{ textAlign:'right' }}>
-                          <span style={{ fontSize:11, background:'rgba(26,111,255,0.1)', color:'var(--blue)', padding:'3px 8px', borderRadius:8, fontWeight:700 }}>
-                            ⏰ {med.times ? med.times.join(', ') : med.time || 'Daily'}
-                          </span>
-                          <div style={{ fontSize:10, color: med.status === 'taken' ? 'var(--success)' : 'var(--warning)', fontWeight:600, marginTop:3 }}>
-                            {med.status === 'taken' ? '✓ Taken' : 'Pending'}
+                  <div style={{ background:'rgba(26,111,255,0.04)', border:'1.5px solid rgba(26,111,255,0.15)', borderRadius:16, padding:'14px 16px', marginTop:10 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:'var(--blue)', marginBottom:10 }}>
+                      📋 {activeLang === 'hi' ? 'सक्रिय दवाइयाँ' : activeLang === 'mr' ? 'सक्रिय औषधे' : 'Active Prescriptions'} ({m.card.data.medicines.length})
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                      {m.card.data.medicines.map((med, mi) => (
+                        <div key={mi} style={{ background:'#fff', padding:'10px 12px', borderRadius:10, display:'flex', justifyContent:'space-between', alignItems:'center', border:'1px solid rgba(26,111,255,0.1)' }}>
+                          <div>
+                            <strong style={{ fontSize:13, color:'var(--text)' }}>💊 {med.name}</strong>
+                            <div style={{ fontSize:11, color:'var(--text3)' }}>
+                              {med.dosage} · ⏰ {med.times ? med.times.join(', ') : med.time} · {med.foodTiming} food
+                            </div>
                           </div>
+                          <span style={{ fontSize:11, fontWeight:700, color: med.status === 'taken' ? 'var(--success)' : 'var(--warning)', background: med.status === 'taken' ? 'rgba(0,196,140,0.1)' : 'rgba(251,191,36,0.1)', padding:'3px 8px', borderRadius:6 }}>
+                            {med.status === 'taken' ? (activeLang === 'hi' ? 'ली गई' : activeLang === 'mr' ? 'घेतले' : 'Taken') : (activeLang === 'hi' ? 'बाकी' : activeLang === 'mr' ? 'बाकी' : 'Pending')}
+                          </span>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
             ))}
 
-            {/* Thinking / Context Analyzing Indicator */}
             {loading && (
-              <div className="chat-bubble bot" style={{ padding:'12px 16px' }}>
-                <div className="bot-label" style={{ fontWeight:800, marginBottom:4, color:'var(--blue)', display:'flex', alignItems:'center', gap:6 }}>
-                  🤖 Sewaarthi AI
-                  <span style={{ fontSize:11, color:'var(--text3)', fontWeight:400 }}>{thinkingTip || 'Analyzing...'}</span>
-                </div>
-                <div className="typing"><span /><span /><span /></div>
+              <div className="chat-bubble bot" style={{ padding:'12px 18px', display:'flex', alignItems:'center', gap:10 }}>
+                <span style={{ animation:'spin 1s linear infinite', fontSize:16 }}>⏳</span>
+                <span style={{ fontSize:13, color:'var(--text2)', fontWeight:600 }}>
+                  {thinkingTip || (activeLang === 'hi' ? 'AI सोच रहा है...' : activeLang === 'mr' ? 'AI विचार करत आहे...' : 'AI is thinking...')}
+                </span>
               </div>
             )}
-
-            {/* Live Voice Listening Pulse Bar */}
-            {isListening && (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(255,77,106,0.12), rgba(26,111,255,0.12))',
-                border: '1.5px solid #ff4d6a', borderRadius: 16, padding: '12px 18px', marginBottom: 12,
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                animation: 'pulseVoice 1.2s infinite'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 20 }}>🎙️</span>
-                  <div>
-                    <strong style={{ fontSize: 13, color: '#e03355' }}>Listening to your voice...</strong>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                      Speak now in {voiceLang === 'hi-IN' ? 'हिन्दी' : voiceLang === 'mr-IN' ? 'मराठी' : 'English'}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={toggleListening}
-                  style={{
-                    background: '#ff4d6a', color: '#fff', border: 'none', padding: '6px 12px',
-                    borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer'
-                  }}
-                >
-                  Stop ⏹️
-                </button>
-              </div>
-            )}
-
             <div ref={endRef} />
           </div>
 
-          {/* ── INPUT ROW WITH MICROPHONE BUTTON ── */}
-          <div className="chat-input-row" style={{ display:'flex', gap:8, marginTop:12, alignItems: 'center' }}>
-            <button
-              onClick={toggleListening}
-              title={isListening ? 'Stop Listening' : 'Speak with Voice'}
-              style={{
-                width: 44, height: 44, borderRadius: '50%', border: 'none',
-                background: isListening
-                  ? 'linear-gradient(135deg, #ff4d6a, #e03355)'
-                  : 'linear-gradient(135deg, #1a6fff, #38bdf8)',
-                color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', flexShrink: 0, boxShadow: isListening ? '0 0 14px rgba(255,77,106,0.6)' : '0 3px 10px rgba(26,111,255,0.3)',
-                transition: 'all 0.25s', animation: isListening ? 'pulseVoice 1s infinite' : 'none'
-              }}
-            >
-              {isListening ? '⏹️' : '🎙️'}
-            </button>
-
+          {/* ── CHAT INPUT BAR ── */}
+          <div style={{ display:'flex', gap:10, alignItems:'center', marginTop:12, paddingTop:10, borderTop:'1px solid rgba(26,111,255,0.1)' }}>
             <input
-              className="chat-input"
-              placeholder={isListening ? "Listening... Speak now..." : "Type or speak (e.g., 'Maine Metformin le li', 'Add 250ml water')..."}
+              type="text"
+              className="form-input"
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !loading && handleUserMessage()}
-              style={{ flex:1, height: 44 }}
+              onKeyDown={e => e.key === 'Enter' && handleUserMessage()}
+              placeholder={activeLang === 'hi' ? 'कोई भी स्वास्थ्य सवाल पूछें (उदा. सर्दी के उपाय, बीपी में क्या खाएं, सिरदर्द)...' : activeLang === 'mr' ? 'कोणताही आरोग्य प्रश्न विचारा (उदा. सर्दीवर उपाय, बीपीत काय खावे, डोकेदुखी)...' : 'Ask any health question (e.g. cold relief, BP diet, headache)...'}
+              style={{ flex:1, margin:0, padding:'12px 16px' }}
             />
 
+            {/* Voice Mic Button */}
             <button
-              className="send-btn"
+              onClick={toggleListening}
+              title={isListening ? 'Listening...' : 'Tap to Speak'}
+              style={{
+                width:46, height:46, borderRadius:14, border:'none',
+                background: isListening ? 'linear-gradient(135deg,#ff4d6a,#ff758c)' : 'rgba(26,111,255,0.08)',
+                color: isListening ? '#fff' : 'var(--blue)',
+                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:20, flexShrink:0, transition:'all 0.2s',
+                boxShadow: isListening ? '0 0 16px rgba(255,77,106,0.5)' : 'none',
+                animation: isListening ? 'pulse 1.2s infinite' : 'none'
+              }}
+            >
+              🎙️
+            </button>
+
+            {/* Send Button */}
+            <button
+              className="btn btn-primary"
               onClick={() => handleUserMessage()}
               disabled={loading || !input.trim()}
-              style={{ width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              →
+              style={{ padding:'12px 20px', borderRadius:14, flexShrink:0 }}
+            >
+              {activeLang === 'hi' ? 'भेजें' : activeLang === 'mr' ? 'पाठवा' : 'Send'}
             </button>
           </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes pulseVoice {
-          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 77, 106, 0.6); }
-          50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 77, 106, 0); }
-          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 77, 106, 0); }
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+          100% { transform: scale(1); }
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </>

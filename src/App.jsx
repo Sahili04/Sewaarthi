@@ -120,7 +120,6 @@ export default function App() {
   const [isCaretaker, setIsCaretaker] = useState(false)
   const [lang,        setLangState]   = useState(getLang())
   const [userProfile, setUserProfile] = useState(null)
-  const [needsProfile,setNeedsProfile]= useState(false)
   const [userRole,    setUserRole]    = useState('patient')
   const checkedRef = useRef({})
   const snoozeRef  = useRef({})
@@ -214,15 +213,9 @@ export default function App() {
         }
 
         setUserRole(currentRole)
-        if (currentRole === 'caretaker') {
-          setNeedsProfile(false)
-        } else {
-          setNeedsProfile(!profileComplete)
-        }
       } else {
         setUserProfile(null)
         setUserRole('patient')
-        setNeedsProfile(false)
       }
       setAuthLoading(false)
     })
@@ -436,19 +429,15 @@ export default function App() {
 
   if (authLoading) return (
     <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#cce5ff,#daeeff)' }}>
-      <AppLogo size={100} />
+      <img src="/logo.png" alt="Sewarthii"
+        style={{ height: 100, width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 4px 12px rgba(26,111,255,0.3))' }}
+        onError={e => { e.target.replaceWith(Object.assign(document.createElement('div'), { textContent:'💊', style:'font-size:100px' })) }}
+      />
       <div style={{ fontSize:12, color:'#8ba0c0', marginTop:8 }}>{tr('tagline') || 'Loading your health data...'}</div>
     </div>
   )
 
   if (!user) return <Login lang={lang} onChangeLang={changeLang} />
-
-  if (needsProfile) return (
-    <ProfileSetup
-      user={user} db={db} lang={lang} tr={tr}
-      onComplete={(profile) => { setUserProfile(prev => ({ ...prev, ...profile })); setNeedsProfile(false) }}
-    />
-  )
 
   const initials    = (user.displayName || user.email || 'U')[0].toUpperCase()
   const displayName = user.displayName || user.email?.split('@')[0] || 'User'
@@ -460,9 +449,6 @@ export default function App() {
     if (!user) return
     const newRole = targetRole || (userRole === 'caretaker' ? 'patient' : 'caretaker')
     setUserRole(newRole)
-    if (newRole === 'caretaker') {
-      setNeedsProfile(false)
-    }
     try {
       const { doc: fDoc, setDoc: fSetDoc } = await import('firebase/firestore')
       await fSetDoc(fDoc(db, 'users', user.uid), { role: newRole, profileComplete: true }, { merge: true })
