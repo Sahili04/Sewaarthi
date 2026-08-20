@@ -127,10 +127,9 @@ const NAV = [
 export default function App() {
   const [page,        setPage]        = useState('dashboard')
   const [medicines,   setMedicines]   = useState([])
-  const [user,        setUser]        = useState(null)
-  // Start as false — we'll show login immediately for new visitors.
-  // For returning users, Firebase will update within ~200ms from cache.
-  const [authLoading, setAuthLoading] = useState(false)
+  // Use auth.currentUser (sync) to decide initial loading state instantly
+  const [user,        setUser]        = useState(() => auth.currentUser)
+  const [authLoading, setAuthLoading] = useState(() => auth.currentUser === null ? false : true)
   const authResolved = useRef(false)
   const [reminderMed, setReminderMed] = useState(null)
   const [waterAlert,  setWaterAlert]  = useState(null)
@@ -157,10 +156,19 @@ export default function App() {
 
   // ── Auth ──
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async u => {
-      // On very first call, quickly resolve auth state
+    // Safety timeout: never show blank screen for more than 1.5 seconds
+    const timeout = setTimeout(() => {
       if (!authResolved.current) {
         authResolved.current = true
+        setAuthLoading(false)
+      }
+    }, 1500)
+
+    const unsub = onAuthStateChanged(auth, async u => {
+      // Resolve auth loading on first callback
+      if (!authResolved.current) {
+        authResolved.current = true
+        clearTimeout(timeout)
         setUser(u)
         setAuthLoading(false)
       } else {
