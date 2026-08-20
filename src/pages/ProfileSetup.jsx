@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { doc, setDoc, getDoc, collection, getDocs, addDoc, deleteDoc } from 'firebase/firestore'
+
 
 function parseHeightInCm(val, unit = 'cm') {
   if (!val) return 0
@@ -49,6 +50,44 @@ function getIdealWeightRange(h, unit = 'cm') {
   return { min, max }
 }
 
+function compressImage(file, maxSize = 256, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (readerEvent) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > maxSize) {
+            height = Math.round((height * maxSize) / width)
+            width = maxSize
+          }
+        } else {
+          if (height > maxSize) {
+            width = Math.round((width * maxSize) / height)
+            height = maxSize
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        const dataUrl = canvas.toDataURL('image/jpeg', quality)
+        resolve(dataUrl)
+      }
+      img.onerror = () => reject(new Error('Failed to load image'))
+      img.src = readerEvent.target.result
+    }
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
+}
+
+
 export default function ProfileSetup({ user, db, onComplete, inline, lang, tr }) {
   const [height,    setHeight]    = useState('')
   const [weight,    setWeight]    = useState('')
@@ -59,6 +98,11 @@ export default function ProfileSetup({ user, db, onComplete, inline, lang, tr })
   const [reminders, setReminders] = useState([])
   const [newTime,   setNewTime]   = useState('')
   const [newAmount, setNewAmount] = useState(250)
+  // Profile picture state
+  const [photoURL,     setPhotoURL]     = useState(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoError,   setPhotoError]   = useState('')
+  const fileInputRef = useRef(null)
 
   const today = new Date().toISOString().split('T')[0]
   const bmi       = calcBMI(height, weight, heightUnit)
@@ -79,6 +123,7 @@ export default function ProfileSetup({ user, db, onComplete, inline, lang, tr })
         if (d.height) setHeight(d.height.toString())
         if (d.weight) setWeight(d.weight.toString())
         if (d.heightUnit) setHeightUnit(d.heightUnit)
+        if (d.photoURL) setPhotoURL(d.photoURL)
       }
       const localW = localStorage.getItem('sw_water_' + user.uid + '_' + today)
       if (localW) setIntake(Number(localW))
@@ -96,6 +141,7 @@ export default function ProfileSetup({ user, db, onComplete, inline, lang, tr })
             if (d.height) setHeight(d.height.toString())
             if (d.weight) setWeight(d.weight.toString())
             if (d.heightUnit) setHeightUnit(d.heightUnit)
+            if (d.photoURL) setPhotoURL(d.photoURL)
             localStorage.setItem('sw_profile_' + user.uid, JSON.stringify(d))
           }
           const intakeSnap = await getDoc(doc(db, 'users', user.uid, 'waterIntake', today))
@@ -166,6 +212,37 @@ export default function ProfileSetup({ user, db, onComplete, inline, lang, tr })
     } catch(e) {}
   }
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    if (!file.type.startsWith('image/')) { setPhotoError('Please select an image file.'); return }
+    setPhotoUploading(true); setPhotoError('')
+    try {
+      // Compress image client-side to lightweight Base64 (max 256x256, ~15-25 KB)
+      const base64Url = await compressImage(file, 256, 0.82)
+      setPhotoURL(base64Url)
+
+      // Save directly to Firestore and localStorage without needing Firebase Storage
+      if (db) {
+        await setDoc(doc(db, 'users', user.uid), { photoURL: base64Url }, { merge: true })
+      }
+      try {
+        const cached = localStorage.getItem('sw_profile_' + user.uid)
+        const prof = cached ? JSON.parse(cached) : {}
+        prof.photoURL = base64Url
+        localStorage.setItem('sw_profile_' + user.uid, JSON.stringify(prof))
+      } catch(e) {}
+
+      // Notify parent so avatar in header and sidebar updates immediately
+      onComplete?.({ photoURL: base64Url })
+    } catch(err) {
+      console.error('Photo upload error:', err)
+      setPhotoError('Upload failed. Please try a different image.')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
   const handleSave = async () => {
     if (!height || !weight) return
     setSaving(true)
@@ -181,12 +258,15 @@ export default function ProfileSetup({ user, db, onComplete, inline, lang, tr })
       bmi: finalBmi,
       waterGoalLiters: finalWaterGoal,
       profileComplete: true,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      ...(photoURL ? { photoURL } : {})
     }
 
     // 1. Immediately persist locally and update parent state
     if (user) {
-      localStorage.setItem('sw_profile_' + user.uid, JSON.stringify(data))
+      const cached = localStorage.getItem('sw_profile_' + user.uid)
+      const prev = cached ? JSON.parse(cached) : {}
+      localStorage.setItem('sw_profile_' + user.uid, JSON.stringify({ ...prev, ...data }))
     }
     onComplete?.(data)
     setSuccess(true)
@@ -215,6 +295,63 @@ export default function ProfileSetup({ user, db, onComplete, inline, lang, tr })
       <div className="greeting s1">
         <h2>{t('healthBmi', 'Health & BMI')} 🏥</h2>
         <p>{t('bmiPageSub', 'Your body stats, BMI calculation & daily hydration')}</p>
+      </div>
+
+      {/* ── PROFILE PICTURE ── */}
+      <div className="card s1b" style={{ display:'flex', alignItems:'center', gap:18, padding:'18px 20px' }}>
+        <div style={{ position:'relative', flexShrink:0 }}>
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              width:80, height:80, borderRadius:'50%', cursor:'pointer', overflow:'hidden',
+              border:'3px solid rgba(26,111,255,0.3)', background:'rgba(26,111,255,0.08)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              boxShadow:'0 4px 16px rgba(26,111,255,0.18)', transition:'all 0.2s',
+              position:'relative'
+            }}
+            onMouseOver={e => e.currentTarget.style.borderColor='#1a6fff'}
+            onMouseOut={e  => e.currentTarget.style.borderColor='rgba(26,111,255,0.3)'}
+          >
+            {photoURL ? (
+              <img src={photoURL} alt="Profile" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+            ) : (
+              <span style={{ fontSize:28, userSelect:'none' }}>
+                {(user?.displayName || user?.email || 'U')[0].toUpperCase()}
+              </span>
+            )}
+            {/* Camera overlay */}
+            <div style={{
+              position:'absolute', inset:0, background:'rgba(26,111,255,0.55)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              opacity:0, transition:'opacity 0.2s', borderRadius:'50%',
+              fontSize:20,
+            }}
+              onMouseOver={e => e.currentTarget.style.opacity='1'}
+              onMouseOut={e  => e.currentTarget.style.opacity='0'}
+            >📷</div>
+          </div>
+          {photoUploading && (
+            <div style={{
+              position:'absolute', inset:0, background:'rgba(255,255,255,0.7)',
+              borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:11, fontWeight:700, color:'var(--blue)'
+            }}>⏳</div>
+          )}
+        </div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontWeight:700, fontSize:14, color:'var(--text1)', marginBottom:4 }}>Profile Picture</div>
+          <div style={{ fontSize:12, color:'var(--text3)', marginBottom:8 }}>Click the circle to upload a photo (free, max 5MB)</div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={photoUploading}
+            style={{ padding:'7px 14px', borderRadius:10, border:'1.5px solid rgba(26,111,255,0.25)', background:'rgba(26,111,255,0.06)', color:'var(--blue)', fontSize:12, fontWeight:700, cursor: photoUploading ? 'not-allowed' : 'pointer', fontFamily:'var(--ff)', transition:'all 0.2s' }}
+          >
+            {photoUploading ? '⏳ Uploading...' : photoURL ? '🔄 Change Photo' : '📷 Upload Photo'}
+          </button>
+          {photoError && <div style={{ fontSize:11, color:'var(--danger)', marginTop:6, fontWeight:600 }}>⚠️ {photoError}</div>}
+          {photoURL && !photoUploading && <div style={{ fontSize:11, color:'var(--success)', marginTop:6, fontWeight:600 }}>✅ Photo saved!</div>}
+        </div>
+        <input ref={fileInputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handlePhotoUpload} />
       </div>
 
       {success && (

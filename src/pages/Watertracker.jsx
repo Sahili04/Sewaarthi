@@ -3,11 +3,14 @@ import { doc, setDoc, getDoc, collection, getDocs, addDoc, deleteDoc } from 'fir
 
 export default function WaterTracker({ user, db, userProfile, lang, speakReminder, tr, onAddWater }) {
   const [intake,     setIntake]     = useState(0)
+  // Guard against NaN: if waterGoalLiters is missing/undefined, default to 2.5L
   const [goal,       setGoal]       = useState(2500)
   const [reminders,  setReminders]  = useState([])
   const [newTime,    setNewTime]    = useState('')
   const [newAmount,  setNewAmount]  = useState(250)
+  const [saveToast,  setSaveToast]  = useState(false)
   const today = new Date().toISOString().split('T')[0]
+
 
   const t = (key, fallback) => tr ? tr(key) : fallback
 
@@ -19,7 +22,10 @@ export default function WaterTracker({ user, db, userProfile, lang, speakReminde
     if (localRem) {
       try { setReminders(JSON.parse(localRem)) } catch(e) {}
     }
-    if (userProfile?.waterGoalLiters) setGoal(parseFloat(userProfile.waterGoalLiters)*1000)
+    // Guard against NaN — only update goal if value is a valid positive number
+    const rawGoal = userProfile?.waterGoalLiters
+    const parsedGoal = parseFloat(rawGoal) * 1000
+    if (rawGoal && !isNaN(parsedGoal) && parsedGoal > 0) setGoal(parsedGoal)
     if (db) {
       fetchIntake()
       fetchReminders()
@@ -52,23 +58,26 @@ export default function WaterTracker({ user, db, userProfile, lang, speakReminde
   const addIntake = async (ml) => {
     const newTotal = intake + ml
     setIntake(newTotal)
+    const safeGoal = (!isNaN(goal) && goal > 0) ? goal : 2500
+    const waterScore = Math.min(Math.round((newTotal / safeGoal) * 100), 100)
     if (user) {
       localStorage.setItem('sw_water_' + user.uid + '_' + today, newTotal.toString())
-      const waterScore = Math.min(Math.round((newTotal/goal)*100), 100)
       localStorage.setItem('sw_water_score_' + user.uid + '_' + today, waterScore.toString())
     }
+    // Always write directly to Firestore — don't rely on parent's stale localStorage read
+    try {
+      if (user && db) {
+        await setDoc(doc(db, 'users', user.uid, 'waterIntake', today), { totalMl: newTotal, date: today }, { merge: true })
+        await setDoc(doc(db, 'users', user.uid, 'dailyHealth', today), { waterScore, date: today }, { merge: true })
+        setSaveToast(true)
+        setTimeout(() => setSaveToast(false), 2000)
+      }
+    } catch(e) {
+      console.warn('Firestore water sync failed, persisted locally:', e)
+    }
+    // Also notify parent (for dashboard stats) — but don't depend on it for saving
     if (onAddWater) {
       try { onAddWater(ml) } catch(e) {}
-    } else {
-      try {
-        if (user && db) {
-          await setDoc(doc(db, 'users', user.uid, 'waterIntake', today), { totalMl:newTotal, date:today }, { merge:true })
-          const waterScore = Math.min(Math.round((newTotal/goal)*100), 100)
-          await setDoc(doc(db, 'users', user.uid, 'dailyHealth', today), { waterScore, date:today }, { merge:true })
-        }
-      } catch(e) {
-        console.warn('Firestore water sync failed, persisted locally:', e)
-      }
     }
   }
 
@@ -122,6 +131,18 @@ export default function WaterTracker({ user, db, userProfile, lang, speakReminde
         <h2>💧 {t('waterTracker', 'Water Tracker')}</h2>
         <p>{t('stayHydratedSub', 'Stay hydrated throughout the day')}</p>
       </div>
+
+      {/* Save confirmation toast */}
+      {saveToast && (
+        <div style={{
+          position:'fixed', bottom:90, left:'50%', transform:'translateX(-50%)',
+          background:'#00c48c', color:'#fff', padding:'10px 22px', borderRadius:12,
+          fontWeight:700, fontSize:13, boxShadow:'0 4px 18px rgba(0,196,140,0.35)',
+          zIndex:9999, animation:'fadeUp 0.3s ease'
+        }}>
+          ✅ Water intake saved!
+        </div>
+      )}
 
       {/* Ring progress */}
       <div className="card s2" style={{ textAlign:'center' }}>

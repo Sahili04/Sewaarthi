@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
-import { getFirestore, collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot, query, where, getDocs, getDoc } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot, query, where, getDocs, getDoc, setDoc } from 'firebase/firestore'
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
   apiKey: "AIzaSyC5IobmWltEfZBIAcZ9x0vvfYBL-lSzv7g",
@@ -16,6 +17,8 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 
 export const db = getFirestore(app)
 export const auth = getAuth(app)
+export const storage = getStorage(app)
 export const googleProvider = new GoogleAuthProvider()
 
-export { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot, query, where, getDocs, getDoc, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithPopup }
+export { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot, query, where, getDocs, getDoc, setDoc, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithPopup }
+

@@ -126,8 +126,15 @@ export default function App() {
   const snoozeRef  = useRef({})
   const waterSnoozeRef = useRef({})
 
-  const changeLang = (l) => { setLang(l); setLangState(l) }
-  const tr = (key) => t(key, lang)
+  const changeLang = (l) => {
+    setLang(l)
+    setLangState(l)
+  }
+  // Always rebuild tr from the current lang state so child components never get a stale closure
+  const tr = (key) => {
+    const val = translations[lang]?.[key] ?? translations['en']?.[key] ?? key
+    return typeof val === 'function' ? val : val
+  }
 
   // Request notification permission
   useEffect(() => { requestNotifPermission() }, [])
@@ -439,12 +446,13 @@ export default function App() {
   if (needsProfile) return (
     <ProfileSetup
       user={user} db={db} lang={lang} tr={tr}
-      onComplete={(profile) => { setUserProfile(profile); setNeedsProfile(false) }}
+      onComplete={(profile) => { setUserProfile(prev => ({ ...prev, ...profile })); setNeedsProfile(false) }}
     />
   )
 
   const initials    = (user.displayName || user.email || 'U')[0].toUpperCase()
   const displayName = user.displayName || user.email?.split('@')[0] || 'User'
+  const photoURL    = userProfile?.photoURL || user.photoURL || null
 
   const sharedProps = { lang, tr }
 
@@ -543,7 +551,9 @@ export default function App() {
             style={{ background:'rgba(255,77,106,0.1)', border:'1px solid rgba(255,77,106,0.22)', color:'#e03355', padding:'5px 10px', borderRadius:9, cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'var(--ff)' }}>
             {tr('logout')}
           </button>
-          <div className="header-avatar">{initials}</div>
+          <div className="header-avatar" style={{ padding: photoURL ? 0 : undefined, overflow: 'hidden' }}>
+            {photoURL ? <img src={photoURL} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} /> : initials}
+          </div>
         </div>
       </header>
 
@@ -582,7 +592,9 @@ export default function App() {
           </button>
         </nav>
         <div className="sidebar-bottom">
-          <div className="header-avatar">{initials}</div>
+          <div className="header-avatar" style={{ padding: photoURL ? 0 : undefined, overflow: 'hidden' }}>
+            {photoURL ? <img src={photoURL} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} /> : initials}
+          </div>
           <div className="user-info">
             <h4>{displayName}</h4>
             <p onClick={handleLogout}>{tr('logout')}</p>
@@ -602,7 +614,7 @@ export default function App() {
           {page==='water'     && <WaterTracker user={user} db={db} userProfile={userProfile} lang={lang} speakReminder={speakReminder} onAddWater={addWaterIntake} {...sharedProps} />}
           {page==='habits'    && <HabitTracker user={user} db={db} {...sharedProps} />}
           {page==='reports'   && <Reports user={user} db={db} medicines={medicines} userProfile={userProfile} {...sharedProps} />}
-          {page==='profile'   && <ProfileSetup user={user} db={db} lang={lang} tr={tr} inline onComplete={(p) => setUserProfile(p)} />}
+          {page==='profile'   && <ProfileSetup user={user} db={db} lang={lang} tr={tr} inline onComplete={(p) => setUserProfile(prev => ({ ...prev, ...p }))} />}
           {page==='care'      && <CaretakerDashboard medicines={medicines} currentUserName={displayName} user={user} db={db} isFullPage={false} onToggleRole={handleToggleRole} {...sharedProps} />}
           <SOSButton user={user} userProfile={userProfile} />
         </div>
