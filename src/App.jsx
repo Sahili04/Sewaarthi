@@ -128,7 +128,10 @@ export default function App() {
   const [page,        setPage]        = useState('dashboard')
   const [medicines,   setMedicines]   = useState([])
   const [user,        setUser]        = useState(null)
-  const [authLoading, setAuthLoading] = useState(true)
+  // Start as false — we'll show login immediately for new visitors.
+  // For returning users, Firebase will update within ~200ms from cache.
+  const [authLoading, setAuthLoading] = useState(false)
+  const authResolved = useRef(false)
   const [reminderMed, setReminderMed] = useState(null)
   const [waterAlert,  setWaterAlert]  = useState(null)
   const [isCaretaker, setIsCaretaker] = useState(false)
@@ -155,7 +158,15 @@ export default function App() {
   // ── Auth ──
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
-      setUser(u)
+      // On very first call, quickly resolve auth state
+      if (!authResolved.current) {
+        authResolved.current = true
+        setUser(u)
+        setAuthLoading(false)
+      } else {
+        setUser(u)
+      }
+
       if (u) {
         // Read explicit role selected on login screen or stored for this user
         const activeRole = localStorage.getItem('sw_active_role')
@@ -182,43 +193,42 @@ export default function App() {
             } else {
               profileComplete = !!parsed.profileComplete || (!!parsed.weight && !!parsed.height)
             }
+            setUserRole(currentRole)
           }
         } catch(e) {}
 
-        // 2. Fetch fresh user data from Firestore
-        try {
-          const { getDoc, doc: fDoc, setDoc: fSetDoc } = await import('firebase/firestore')
-          const snap = await getDoc(fDoc(db, 'users', u.uid))
-          if (snap.exists()) {
-            const data = snap.data()
-            if (!explicitRole && data.role) {
-              currentRole = data.role
+        // 2. Fetch fresh user data from Firestore IN BACKGROUND (don't block UI)
+        ;(async () => {
+          try {
+            const { getDoc, doc: fDoc, setDoc: fSetDoc } = await import('firebase/firestore')
+            const snap = await getDoc(fDoc(db, 'users', u.uid))
+            if (snap.exists()) {
+              const data = snap.data()
+              if (!explicitRole && data.role) {
+                currentRole = data.role
+              }
+              const updatedProfile = { ...data, role: currentRole }
+              if (currentRole === 'caretaker') {
+                updatedProfile.profileComplete = true
+              }
+              setUserProfile(updatedProfile)
+              setUserRole(currentRole)
+              localStorage.setItem('sw_profile_' + u.uid, JSON.stringify(updatedProfile))
             }
-            const updatedProfile = { ...data, role: currentRole }
-            if (currentRole === 'caretaker') {
-              updatedProfile.profileComplete = true
-            }
-            setUserProfile(updatedProfile)
-            localStorage.setItem('sw_profile_' + u.uid, JSON.stringify(updatedProfile))
-            if (currentRole === 'caretaker') {
-              profileComplete = true
-            } else {
-              profileComplete = !!data.profileComplete || (!!data.weight && !!data.height)
-            }
-          }
 
-          // If an explicit role was detected/chosen, make sure Firestore has it synced
-          if (explicitRole) {
-            await fSetDoc(fDoc(db, 'users', u.uid), {
-              role: explicitRole,
-              email: u.email ? u.email.toLowerCase() : '',
-              displayName: u.displayName || (u.email ? u.email.split('@')[0] : 'User'),
-              ...(explicitRole === 'caretaker' ? { profileComplete: true } : {})
-            }, { merge: true })
+            // If an explicit role was detected/chosen, make sure Firestore has it synced
+            if (explicitRole) {
+              await fSetDoc(fDoc(db, 'users', u.uid), {
+                role: explicitRole,
+                email: u.email ? u.email.toLowerCase() : '',
+                displayName: u.displayName || (u.email ? u.email.split('@')[0] : 'User'),
+                ...(explicitRole === 'caretaker' ? { profileComplete: true } : {})
+              }, { merge: true })
+            }
+          } catch(e) {
+            console.warn('Firestore user fetch failed:', e)
           }
-        } catch(e) {
-          console.warn('Firestore user fetch failed:', e)
-        }
+        })()
 
         // Clean up pending login flags
         localStorage.removeItem('sw_active_role')
@@ -226,12 +236,13 @@ export default function App() {
           localStorage.removeItem('sw_pending_role_' + u.email.toLowerCase())
         }
 
-        setUserRole(currentRole)
+        if (!explicitRole) {
+          setUserRole(currentRole)
+        }
       } else {
         setUserProfile(null)
         setUserRole('patient')
       }
-      setAuthLoading(false)
     })
     return () => unsub()
   }, [])
