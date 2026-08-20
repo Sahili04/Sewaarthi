@@ -1,21 +1,35 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { db, auth, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, query, where, signOut, onAuthStateChanged } from './firebase'
-import Dashboard from './pages/Dashboard'
-import AddMedicine from './pages/AddMedicine'
-import AIAssistant from './pages/AIAssistant.jsx'
-import PrescriptionScanner from './pages/PrescriptionScanner'
-import IoTDevice from './pages/IoTDevice'
-import CaretakerDashboard from './pages/Caretakerdashboard'
-import DoctorContacts from './pages/DoctorContacts'
-import Login from './pages/Login'
-import ProfileSetup from './pages/ProfileSetup'
-import WaterTracker from './pages/Watertracker'
-import HabitTracker from './pages/Habittracker'
-import Reports from './pages/Reports'
-import SeedData from './pages/SeedData'
-import SOSButton from './components/SOSButton'
 import { translations, voiceLang } from './locales/translations'
+import SOSButton from './components/SOSButton'
 import './index.css'
+
+// Lazy-load all pages to keep initial bundle tiny
+const Dashboard           = lazy(() => import('./pages/Dashboard'))
+const AddMedicine         = lazy(() => import('./pages/AddMedicine'))
+const AIAssistant         = lazy(() => import('./pages/AIAssistant.jsx'))
+const PrescriptionScanner = lazy(() => import('./pages/PrescriptionScanner'))
+const IoTDevice           = lazy(() => import('./pages/IoTDevice'))
+const CaretakerDashboard  = lazy(() => import('./pages/Caretakerdashboard'))
+const DoctorContacts      = lazy(() => import('./pages/DoctorContacts'))
+const Login               = lazy(() => import('./pages/Login'))
+const ProfileSetup        = lazy(() => import('./pages/ProfileSetup'))
+const WaterTracker        = lazy(() => import('./pages/Watertracker'))
+const HabitTracker        = lazy(() => import('./pages/Habittracker'))
+const Reports             = lazy(() => import('./pages/Reports'))
+const SeedData            = lazy(() => import('./pages/SeedData'))
+
+// Suspense fallback loader
+function PageLoader() {
+  return (
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#cce5ff,#daeeff)' }}>
+      <div style={{ textAlign:'center' }}>
+        <div style={{ fontSize:40, marginBottom:12 }}>💊</div>
+        <div style={{ fontSize:13, color:'#8ba0c0' }}>Loading...</div>
+      </div>
+    </div>
+  )
+}
 
 // ── Language helpers ──
 function getLang() { return localStorage.getItem('sw_lang') || 'en' }
@@ -437,7 +451,7 @@ export default function App() {
     </div>
   )
 
-  if (!user) return <Login lang={lang} onChangeLang={changeLang} />
+  if (!user) return <Suspense fallback={<PageLoader />}><Login lang={lang} onChangeLang={changeLang} /></Suspense>
 
   const initials    = (user.displayName || user.email || 'U')[0].toUpperCase()
   const displayName = user.displayName || user.email?.split('@')[0] || 'User'
@@ -465,19 +479,22 @@ export default function App() {
   // ── CARETAKER ACCOUNT: dedicated full-page experience, no patient nav ──
   if (userRole === 'caretaker') {
     return (
-      <CaretakerDashboard
-        user={user} db={db} tr={tr} lang={lang}
-        currentUserName={displayName}
-        isFullPage={true}
-        initials={initials}
-        changeLang={changeLang}
-        onLogout={handleLogout}
-        onToggleRole={handleToggleRole}
-      />
+      <Suspense fallback={<PageLoader />}>
+        <CaretakerDashboard
+          user={user} db={db} tr={tr} lang={lang}
+          currentUserName={displayName}
+          isFullPage={true}
+          initials={initials}
+          changeLang={changeLang}
+          onLogout={handleLogout}
+          onToggleRole={handleToggleRole}
+        />
+      </Suspense>
     )
   }
 
   return (
+    <Suspense fallback={<PageLoader />}>
     <div className="app-layout">
 
       {/* ── MEDICINE REMINDER POPUP ── */}
@@ -623,5 +640,6 @@ export default function App() {
       </nav>
 
     </div>
+    </Suspense>
   )
 }
